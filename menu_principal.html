@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú Principal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #f0f2f5; }
+    .topbar { display: none; align-items: center; justify-content: space-between; background: #1a252f; color: #fff; padding: 10px 16px; border-bottom: 1px solid #34495e; position: sticky; top: 0; z-index: 1000; }
+    .layout { display: flex; flex: 1; flex-direction: row; }
+    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; }
+    .brand-icon { font-size: 1.2rem; }
+    .topbar .menu-items { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow-x: auto; }
+    .menu-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #bdc3c7; text-decoration: none; border-radius: 6px; transition: background 0.2s, color 0.2s; }
+    .menu-item:hover, .menu-item.active { background: #34495e; color: #fff; }
+    .menu-item .icon { width: 20px; height: 20px; }
+    .menu-item span { white-space: nowrap; }
+    .menu-group { position: relative; display: inline-flex; align-items: center; }
+    .arrow { font-size: 0.8rem; }
+    .topbar .submenu { position: absolute; top: calc(100% + 6px); left: 0; background: #233342; border: 1px solid #34495e; border-radius: 8px; min-width: 200px; display: none; padding: 6px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+    .topbar .submenu.open { display: block; }
+    .submenu-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #95a5a6; text-decoration: none; font-size: 0.9rem; }
+    .submenu-item:hover, .submenu-item.active { background: #2c3e50; color: #fff; }
+    .user-area { display: flex; align-items: center; gap: 12px; }
+    .user-profile { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #ecf0f1; }
+    .btn-logout { display: flex; align-items: center; gap: 6px; color: #e74c3c; text-decoration: none; font-size: 0.9rem; padding: 6px 10px; border: 1px solid #e74c3c; border-radius: 6px; transition: background 0.2s; }
+    .btn-logout:hover { background: #c0392b; color: #fff; }
+    .main-content { flex: 1; display: flex; flex-direction: column; background: #e6f7ff; }
+    iframe { width: 100%; height: 100%; border: none; }
+    .sidebar { width: 240px; background: #2c3e50; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+    .sidebar-header { padding: 20px; background: #1a252f; text-align: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .sidebar .menu-items { display: flex; flex-direction: column; gap: 0; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 0; }
+    .sidebar .menu-item { width: 100%; padding: 12px 20px; border-left: 4px solid transparent; border-radius: 0; }
+    .sidebar .menu-item:hover, .sidebar .menu-item.active { background: #34495e; color: #fff; border-left-color: #3498db; }
+    .sidebar .menu-group { display: block; }
+    .sidebar .submenu { display: none; background: #233342; padding-left: 0; position: relative; border: none; box-shadow: none; }
+    .sidebar .submenu.open { display: block; }
+    .sidebar .submenu-item { padding: 10px 20px; color: #95a5a6; }
+    .sidebar-footer { padding: 15px; background: #1a252f; border-top: 1px solid #34495e; }
+    @media (max-width: 768px) {
+      .topbar { display: flex; }
+      .layout { flex-direction: column; }
+      .sidebar { display: none; }
+      .topbar .menu-items { overflow-x: auto; white-space: nowrap; gap: 6px; }
+      .menu-item { padding: 6px 10px; justify-content: center; }
+      .topbar .menu-item span { display: none; }
+      .topbar .menu-item .arrow { display: none; }
+      .topbar .brand span { display: none; }
+      .topbar .user-area { display: none; }
+      .topbar .submenu { position: fixed; left: 8px; right: 8px; top: auto; bottom: 8px; }
+      .btn-logout { padding: 5px 8px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <style>
+  </style>
+  <header class="topbar">
+    <div class="brand" onclick="document.querySelectorAll('.menu-item').forEach(i=>i.classList.remove('active')); document.getElementById('content-frame').src='/dashboard';">
+      <div class="brand-icon">🏪</div>
+      <span>Sistema</span>
+    </div>
+    <nav class="menu-items">
+      <a href="/ventas" target="content-frame" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/ventas.svg" class="icon" alt="Ventas"><span>Ventas</span>
+      </a>
+      <a href="/productos" target="content-frame" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/productos.svg" class="icon" alt="Productos"><span>Productos</span>
+      </a>
+      <a href="/pedidos" target="content-frame" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/ventas.svg" class="icon" alt="Pedidos"><span>Pedidos</span>
+      </a>
+      <a href="#" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/gastos.svg" class="icon" alt="Gastos"><span>Gastos</span>
+      </a>
+      <a href="#" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/compras.png" class="icon" alt="Compras"><span>Compras</span>
+      </a>
+      <a href="#" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/clientes.png" class="icon" alt="Proveedores"><span>Proveedores</span>
+      </a>
+      <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/insumos.svg" class="icon" alt="Mov. Inventario"><span>Mov. Inventario</span><span class="arrow">▼</span>
+        </div>
+        <div class="submenu">
+          <a href="#" target="content-frame" class="submenu-item">Inventario</a>
+          <a href="#" target="content-frame" class="submenu-item">Entradas</a>
+          <a href="#" target="content-frame" class="submenu-item">Salidas</a>
+        </div>
+      </div>
+      <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/historial.svg" class="icon" alt="Documentos"><span>Gestión Documentos</span><span class="arrow">▼</span>
+        </div>
+        <div class="submenu">
+          <a href="#" target="content-frame" class="submenu-item">Gestión de Ventas</a>
+          <a href="#" target="content-frame" class="submenu-item">Reimprimir Compras</a>
+        </div>
+      </div>
+      <a href="/clientes" target="content-frame" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/clientes.png" class="icon" alt="Clientes"><span>Clientes</span>
+      </a>
+      <a href="#" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/cierre.png" class="icon" alt="Cierre Caja"><span>Cierre Caja</span>
+      </a>
+      <a href="#" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/caja.png" class="icon" alt="Arqueo Caja"><span>Arqueo Caja</span>
+      </a>
+      <a href="/usuarios" target="content-frame" class="menu-item" onclick="setActive(this)">
+        <img src="/static/iconos/usuarios.png" class="icon" alt="Usuarios"><span>Usuarios</span>
+      </a>
+      <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/configuracion.png" class="icon" alt="Configuración"><span>Configuración</span><span class="arrow">▼</span>
+        </div>
+        <div class="submenu">
+          <a href="/configuracion/compania" target="content-frame" class="submenu-item">Configuración de Empresa</a>
+          <a href="/configuracion/cai?tipo=G" target="content-frame" class="submenu-item">Gestión CAI (General)</a>
+          <a href="/configuracion/cai?tipo=E" target="content-frame" class="submenu-item">Gestión CAI (Exenta)</a>
+        </div>
+      </div>
+    </nav>
+    <div class="user-area">
+      <div class="user-profile">
+        <div>👤</div>
+        <span>{{ usuario.nombre }}{% if usuario and usuario.rol %} ({{ usuario.rol }}){% endif %}</span>
+      </div>
+      <a href="/logout" class="btn-logout" title="Salir">
+        <img src="/static/iconos/salir2.png" style="width:16px;" alt="Salir"><span>Salir</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="document.querySelectorAll('.menu-item').forEach(i=>i.classList.remove('active')); document.getElementById('content-frame').src='/dashboard';">
+        <div style="font-size: 1.2rem;">🏪</div>
+        <span>Sistema</span>
+      </div>
+      <nav class="menu-items">
+        <a href="/ventas" target="content-frame" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/ventas.svg" class="icon" alt="Ventas"><span>Ventas</span>
+        </a>
+        <a href="/productos" target="content-frame" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/productos.svg" class="icon" alt="Productos"><span>Productos</span>
+        </a>
+        <a href="/pedidos" target="content-frame" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/ventas.svg" class="icon" alt="Pedidos"><span>Pedidos</span>
+        </a>
+        <a href="#" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/gastos.svg" class="icon" alt="Gastos"><span>Gastos</span>
+        </a>
+        <a href="#" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/compras.png" class="icon" alt="Compras"><span>Compras</span>
+        </a>
+        <a href="#" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/clientes.png" class="icon" alt="Proveedores"><span>Proveedores</span>
+        </a>
+        <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/insumos.svg" class="icon" alt="Mov. Inventario"><span>Mov. Inventario</span><span class="arrow">▼</span>
+        </div>
+          <div class="submenu">
+            <a href="#" target="content-frame" class="submenu-item">Inventario</a>
+            <a href="#" target="content-frame" class="submenu-item">Entradas</a>
+            <a href="#" target="content-frame" class="submenu-item">Salidas</a>
+          </div>
+        </div>
+        <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/historial.svg" class="icon" alt="Documentos"><span>Gestión Documentos</span><span class="arrow">▼</span>
+        </div>
+          <div class="submenu">
+            <a href="#" target="content-frame" class="submenu-item">Gestión de Ventas</a>
+            <a href="#" target="content-frame" class="submenu-item">Reimprimir Compras</a>
+          </div>
+        </div>
+        <a href="/clientes" target="content-frame" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/clientes.png" class="icon" alt="Clientes"><span>Clientes</span>
+        </a>
+        <a href="#" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/cierre.png" class="icon" alt="Cierre Caja"><span>Cierre Caja</span>
+        </a>
+        <a href="#" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/caja.png" class="icon" alt="Arqueo Caja"><span>Arqueo Caja</span>
+        </a>
+        <a href="/usuarios" target="content-frame" class="menu-item" onclick="setActive(this)">
+          <img src="/static/iconos/usuarios.png" class="icon" alt="Usuarios"><span>Usuarios</span>
+        </a>
+        <div class="menu-group">
+        <div class="menu-item" onclick="toggleSubmenu(this)">
+          <img src="/static/iconos/configuracion.png" class="icon" alt="Configuración"><span>Configuración</span><span class="arrow">▼</span>
+        </div>
+          <div class="submenu">
+            <a href="/configuracion/compania" target="content-frame" class="submenu-item">Configuración de Empresa</a>
+            <a href="/configuracion/cai?tipo=G" target="content-frame" class="submenu-item">Gestión CAI (General)</a>
+            <a href="/configuracion/cai?tipo=E" target="content-frame" class="submenu-item">Gestión CAI (Exenta)</a>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div>👤</div>
+          <span>{{ usuario.nombre }}{% if usuario and usuario.rol %} ({{ usuario.rol }}){% endif %}</span>
+        </div>
+        <a href="/logout" class="btn-logout" title="Salir">
+          <img src="/static/iconos/salir2.png" style="width:16px;" alt="Salir"><span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </aside>
+    <main class="main-content">
+      {% if not usuario %}
+      <div style="background:#fff3cd; color:#856404; padding:8px 12px; border-bottom:1px solid #ffeeba; font-size:0.95rem;">Sesión requerida</div>
+      <script>window.location.href="/login";</script>
+      {% endif %}
+      <iframe src="/dashboard" name="content-frame" id="content-frame"></iframe>
+    </main>
+  </div>
+
+  <script>
+    function setActive(element) {
+      document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.submenu-item').forEach(item => item.classList.remove('active'));
+      element.classList.add('active');
+    }
+    
+    function toggleSubmenu(element) {
+        const submenu = element.nextElementSibling;
+        const arrow = element.querySelector('.arrow');
+        
+        submenu.classList.toggle('open');
+        element.classList.toggle('active');
+        
+        if (submenu.classList.contains('open')) {
+            arrow.textContent = "▲";
+            arrow.style.transform = "";
+        } else {
+            arrow.textContent = "▼";
+            arrow.style.transform = "";
+        }
+    }
+  </script>
+
+</body>
+</html>

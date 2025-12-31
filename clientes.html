@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    .container { max-width: 98%; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; }
+    .header h1 { font-size: 1.2rem; }
+    .grid { display:grid; grid-template-columns: 500px 1fr; gap: 16px; }
+    .card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:12px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display:block; margin-bottom:4px; font-weight:bold; }
+    .form-group input { width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; }
+    .btn { padding:6px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:none; border-radius:4px; cursor:pointer; }
+    .btn-primary { background:#28a745; color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border:1px solid #eee; padding:8px; font-size: 0.95rem; }
+    th { background:#f8f9fa; text-align:left; }
+    .actions { display:flex; gap:8px; }
+    .small { font-size: 0.85rem; color:#666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Gestión de Clientes</h1>
+      <a href="/dashboard" class="btn btn-secondary" style="width:auto; padding:8px 16px;">Inicio</a>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Nuevo / Editar Cliente</h3>
+        <div class="form-group">
+          <label>RTN</label>
+          <input type="text" id="rtn" placeholder="0801XXXXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="nombre" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="telefono" placeholder="9999-9999">
+        </div>
+        <div class="form-group">
+          <label>Correo</label>
+          <input type="email" id="correo" placeholder="correo@dominio.com">
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="guardarCliente()" title="Guardar">
+            <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M5,20H19V10H5V20M19,8H15V2H9V8H5L12,15L19,8M12,18H16V22H8V18H12Z" /></svg>
+          </button>
+          <button class="btn btn-secondary" onclick="limpiarForm()" title="Limpiar">
+            <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>
+          </button>
+        </div>
+        <p id="msg" class="small"></p>
+        <input type="hidden" id="cliente_id">
+      </div>
+      <div class="card">
+        <h3>Listado</h3>
+        <table id="tabla-clientes">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ID</th>
+              <th style="width: 140px;">RTN</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th style="width: 100px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    async function cargarClientes() {
+      const resp = await fetch("/api/clientes");
+      const data = await resp.json();
+      window._clientesData = {};
+      const tbody = document.querySelector("#tabla-clientes tbody");
+      tbody.innerHTML = "";
+      data.forEach(c => {
+      window._clientesData[c.id_cliente] = { rtn: c.rtn || "", nombre: c.nombre || "", telefono: c.telefono || "", correo: c.correo || "" };
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${c.id_cliente}</td>
+          <td>${c.rtn || ""}</td>
+          <td>${c.nombre}</td>
+          <td>${c.telefono || ""}</td>
+          <td>${c.correo || ""}</td>
+          <td class="actions" style="justify-content: center;">
+            <button class="btn btn-secondary" onclick="editarId(${c.id_cliente})" title="Editar">
+              <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+            </button>
+            <button class="btn btn-secondary" onclick="eliminar(${c.id_cliente})" title="Eliminar">
+              <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    function editarId(id) {
+      const c = (window._clientesData || {})[id];
+      document.getElementById("cliente_id").value = id;
+      document.getElementById("rtn").value = c ? (c.rtn || "") : "";
+      document.getElementById("nombre").value = c ? (c.nombre || "") : "";
+      document.getElementById("telefono").value = c ? (c.telefono || "") : "";
+      document.getElementById("correo").value = c ? (c.correo || "") : "";
+      document.getElementById("msg").textContent = "";
+    }
+    function limpiarForm() {
+      document.getElementById("cliente_id").value = "";
+      document.getElementById("rtn").value = "";
+      document.getElementById("nombre").value = "";
+      document.getElementById("telefono").value = "";
+      document.getElementById("correo").value = "";
+      document.getElementById("msg").textContent = "";
+    }
+    async function guardarCliente() {
+      const id = document.getElementById("cliente_id").value;
+      const rtn = document.getElementById("rtn").value.trim();
+      const nombre = document.getElementById("nombre").value.trim();
+      const telefono = document.getElementById("telefono").value.trim();
+      const correo = document.getElementById("correo").value.trim();
+      if (!nombre) { document.getElementById("msg").textContent = "Nombre requerido"; return; }
+      try {
+        if (id) {
+          const resp = await fetch(`/api/clientes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rtn, nombre, telefono, correo })
+          });
+          if (!resp.ok) throw new Error("No se pudo actualizar");
+          document.getElementById("msg").textContent = "Cliente actualizado";
+        } else {
+          const resp = await fetch("/api/clientes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rtn, nombre, telefono, correo })
+          });
+          if (!resp.ok) throw new Error("No se pudo crear");
+          document.getElementById("msg").textContent = "Cliente creado";
+        }
+        limpiarForm();
+        cargarClientes();
+      } catch(e) {
+        document.getElementById("msg").textContent = e.message;
+      }
+    }
+    async function eliminar(id) {
+      if (!confirm("¿Eliminar este cliente?")) return;
+      try {
+        const resp = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+        if (!resp.ok) throw new Error("No se pudo eliminar");
+        if (document.getElementById("cliente_id").value == String(id)) {
+          limpiarForm();
+        }
+        if (window._clientesData) {
+          delete window._clientesData[id];
+        }
+        cargarClientes();
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+    cargarClientes();
+  </script>
+</body>
+</html>

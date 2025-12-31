@@ -1,0 +1,110 @@
+/* Tipografía */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: #f7f9fc;
+  color: #333;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
+/* Layout */
+.container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  transition: transform .2s, box-shadow .2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+.card h2 { margin-top:0; margin-bottom: 16px; font-size: 18px; }
+
+/* Colores por sección */
+.card.cliente { border-left: 6px solid #16a34a; }
+.card.factura { border-left: 6px solid #f97316; }
+.card.productos { border-left: 6px solid #3b82f6; }
+.card.totales { border-left: 6px solid #8b5cf6; }
+
+/* Grid */
+.grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+.grid-4 { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; align-items:end; }
+.col-span-2 { grid-column: span 2; }
+
+/* Inputs y botones */
+label { font-size: 13px; color:#444; display:block; margin-bottom:6px; }
+input, select, button {
+  width: 100%;
+  padding: 10px 12px;
+  border:1px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+}
+input[readonly] { background:#f3f4f6; color:#6b7280; }
+
+/* Botones */
+button {
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition: background .2s, transform .1s;
+}
+button:hover { transform: scale(1.05); }
+
+/* Colores botones */
+#btn-agregar { background:#16a34a; color:#fff; }
+#btn-agregar:hover { background:#15803d; }
+
+#btn-pagar { background:#ef4444; color:#fff; }
+#btn-pagar:hover { background:#dc2626; }
+
+/* Tabla */
+.table-wrapper { overflow:auto; border-radius: 10px; }
+table { width:100%; border-collapse: collapse; font-size:14px; }
+thead th {
+  background: #06b6d4;
+  color: #fff;
+  padding:10px;
+  text-align:left;
+  font-weight:600;
+}
+tbody td { border-top:1px solid #eee; padding:10px; }
+tbody tr:nth-child(even){ background:#f9fafb; }
+
+/* Totales */
+.totals-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+  margin-bottom:20px;
+}
+.totals-grid div {
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  padding:12px;
+  border-radius: 10px;
+  text-align:center;
+}
+.totals-grid .total {
+  grid-column: span 3;
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color:#fff;
+  font-size:18px;
+  font-weight:600;
+}
+.pay-actions { display:flex; gap:10px; justify-content:flex-end; }

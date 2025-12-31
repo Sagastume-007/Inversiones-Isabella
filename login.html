@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f7f7fb; padding: 20px; }
+    .container { max-width: 420px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 14px 18px; }
+    .header h1 { font-size: 20px; }
+    .content { padding: 16px; }
+    .form-group { margin-bottom: 12px; }
+    label { display:block; margin-bottom:6px; font-weight:600; color:#333; }
+    input { width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px; }
+    input:focus { outline:none; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); }
+    .btn { width:100%; padding:10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; background:#667eea; color:#fff; }
+    .msg { margin-bottom:10px; padding:10px; border-radius:8px; }
+    .msg.info { background:#e3f2fd; color:#1565c0; border-left:4px solid #2196f3; }
+    .msg.success { background:#e8f5e9; color:#256d1b; border-left:4px solid #4caf50; }
+    .msg.danger { background:#ffebee; color:#c62828; border-left:4px solid #f44336; }
+    @media (max-width: 480px) {
+      .container { margin: 16px auto; border-radius: 8px; }
+      .header { padding: 10px 14px; }
+      .header h1 { font-size: 18px; }
+      .content { padding: 12px; }
+      input { padding: 8px; font-size: 13px; }
+      .btn { padding: 8px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Iniciar Sesión</h1>
+    </div>
+    <div class="content">
+      {% if msg %}
+      <div class="msg {{ msg_type or 'info' }}">{{ msg }}</div>
+      {% endif %}
+      <form method="post" action="/login">
+        <div class="form-group">
+          <label for="usuario">Usuario</label>
+          <input id="usuario" name="usuario" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" type="password" name="contrasena" autocomplete="current-password" required>
+        </div>
+        <button class="btn" type="submit">Ingresar</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+

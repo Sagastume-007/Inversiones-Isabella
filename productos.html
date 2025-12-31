@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f7f7fb; padding: 20px; }
+    .barcode-input-container { position: relative; flex: 1; display: flex; }
+    .barcode-input-container input { padding-right: 40px; width: 100%; }
+    .scan-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 16px; cursor: pointer; z-index: 10; }
+    .scan-icon:hover { transform: translateY(-50%) scale(1.1); }
+    .container { max-width: 1400px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 10px 16px; }
+    .header h1 { font-size: 22px; }
+    .content { padding: 12px; }
+    .filters { display: grid; grid-template-columns: 1fr 300px 110px; gap: 12px; margin-bottom: 14px; }
+    .filters input, .filters select { padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+    .filters input:focus, .filters select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.12); }
+    .table-wrap { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; width: 70%; margin: 0 auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #fafafa; text-align: left; padding: 6px 0; font-size: 16px; border-bottom: 1px solid #e0e0e0; cursor: pointer; }
+    tbody td { padding: 6px 0; font-size: 15px; border-bottom: 1px solid #f0f0f0; }
+    #tabla th:first-child, #tabla td:first-child { padding-left: 0; }
+    tbody tr.data-row:nth-child(odd) { background: #f8fbff; }
+    tbody tr.data-row:nth-child(even) { background: #fff8f8; }
+    tbody tr.data-row:hover { background: #eaf2ff; }
+    .right { text-align: right; }
+    .actions { margin-top: 12px; display: flex; gap: 10px; }
+    .btn { padding: 10px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: #667eea; color: #fff; }
+    .btn-secondary { background: #f0f0f8; color: #333; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 14px; }
+    .icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 14px; height: 14px; border-radius: 4px; font-size: 12px; line-height: 1; }
+    .icon-btn.delete { background:#ff4d4f; color:white; }
+    .icon-btn.delete[disabled] { background:#ddd; color:#777; cursor:not-allowed; }
+    .badge.exento { background: #e8f5e9; color: #256d1b; }
+    .badge.p15 { background: #fff4e6; color: #b76a00; }
+    .badge.p18 { background: #ffe5e5; color: #a40000; }
+    .empty { padding: 20px; text-align: center; color: #777; }
+    .clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; display: inline-block; }
+    #tabla th:nth-child(1), #tabla td:nth-child(1) { width: 60px; min-width: 60px; }
+    #tabla th:nth-child(4), #tabla td:nth-child(4) { width: 72px; min-width: 72px; }
+    #tabla th:nth-child(4), #tabla td:nth-child(4) { padding-right: 6px; }
+    #tabla td:nth-child(4) { transform: translateX(-4px); }
+    #tabla thead th:nth-child(3) { padding-right: 6px; }
+    #tabla th:nth-child(6), #tabla td:nth-child(6) { padding-right: 12px; }
+    #tabla th:nth-child(8), #tabla td:nth-child(8) { width: 120px; min-width: 120px; white-space: nowrap; padding-left: 6px; }
+    @media (max-width: 768px) {
+      body { padding: 4px; }
+      body { padding-top: 56px; }
+      body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); }
+      .header { padding: 12px 16px; }
+      .header h1 { font-size: 18px; }
+      .container { max-width: 100%; border-radius: 0; }
+      .content { padding: 8px; padding-bottom: 20px; }
+      .filters { display: flex; flex-direction: column; gap: 8px; }
+      .filters input, .filters select { font-size: 13px; padding: 8px; }
+      .filters .btn { width: 100%; padding: 8px; font-size: 13px; }
+      #btn-refrescar { width: auto; padding: 6px 10px; font-size: 13px; }
+      .scan-icon { font-size: 16px; }
+      .table-wrap { width: 100%; margin: 0; }
+      #btn-agregar, #btn-nueva-cat { width: 26px !important; height: 34px !important; font-size: 16px !important; }
+      .table-wrap { overflow-x: auto; }
+      .table-wrap { overflow-x: hidden; }
+      table { width: 100%; font-size: 11px; }
+      thead th { font-size: 11px; }
+      tbody td { font-size: 11px; }
+      thead th, tbody td { padding: 6px 0; }
+      .clip { max-width: 180px; }
+      .badge { font-size: 11px; }
+      .pagination { position: fixed; top: 0; left: 0; right: 0; margin-top: 0 !important; padding: 6px; background: #fff; border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 1000; }
+      .pagination .btn { padding: 6px; font-size: 12px; }
+      .pagination #page-info { font-size: 12px; }
+      #tabla th:nth-child(1), #tabla td:nth-child(1) { width: 52px; min-width: 52px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { width: 68px; min-width: 68px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { padding-right: 6px; }
+      #tabla td:nth-child(4) { transform: translateX(-3px); }
+      #tabla thead th:nth-child(3) { padding-right: 6px; }
+      #tabla th:nth-child(8), #tabla td:nth-child(8) { width: 140px; min-width: 140px; padding-left: 6px; }
+      #tabla th:nth-child(6), #tabla td:nth-child(6) { padding-right: 12px; }
+    }
+    @media (max-width: 480px) {
+      .header { padding: 10px 14px; }
+      .header h1 { font-size: 15px; }
+      .filters { gap: 4px; }
+      .filters input, .filters select { font-size: 12px; padding: 7px; }
+      .btn { padding: 8px; font-size: 12px; }
+      .scan-icon { font-size: 14px; }
+      .table-wrap { width: 100%; margin: 0; }
+      #btn-agregar, #btn-nueva_cat, #btn-nueva-cat { width: 22px !important; height: 30px !important; font-size: 14px !important; }
+      table { width: 100%; font-size: 9px; }
+      thead th { font-size: 9px; }
+      tbody td { font-size: 9px; }
+      thead th, tbody td { padding: 3px 0; }
+      .clip { max-width: 120px; }
+      #tabla th:nth-child(7), #tabla td:nth-child(7) { display: none; }
+      .badge { font-size: 10px; }
+      #tabla th:nth-child(3), #tabla td:nth-child(3) { padding-left: 0; width: 80px; min-width: 80px; white-space: nowrap; }
+      #tabla td:nth-child(3) { overflow: hidden; text-overflow: ellipsis; text-align: right; padding-right: 8px; }
+      #tabla td:nth-child(4) { text-align: right !important; }
+      #tabla th:nth-child(2), #tabla td:nth-child(2) { padding-right: 0; }
+      #tabla thead th:nth-child(3) { padding-right: 4px; }
+      body { padding-top: 52px; }
+      body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); }
+      .content { padding-bottom: 18px; }
+      .pagination { position: fixed; top: 0; left: 0; right: 0; margin-top: 0 !important; padding: 6px; background: #fff; border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 1000; }
+      .pagination .btn { padding: 6px; font-size: 12px; }
+      .pagination #page-info { font-size: 11px; }
+      #tabla th:nth-child(1), #tabla td:nth-child(1) { width: 46px; min-width: 46px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { width: 56px; min-width: 56px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { padding-right: 4px; }
+      #tabla td:nth-child(4) { transform: translateX(-3px); }
+      #tabla th:nth-child(8), #tabla td:nth-child(8) { width: 75px; min-width: 75px; padding-left: 6px; }
+      #tabla th:nth-child(6), #tabla td:nth-child(6) { padding-right: 8px; }
+      .btn-activar { padding: 4px 6px !important; font-size: 11px !important; }
+    }
+    @media (max-width: 360px) {
+      .header { padding: 8px 12px; }
+      .header h1 { font-size: 14px; }
+      .filters input, .filters select { font-size: 11px; padding: 6px; }
+      .btn { padding: 7px; font-size: 11px; }
+      .scan-icon { font-size: 13px; }
+      #btn-agregar, #btn-nueva_cat, #btn-nueva-cat { width: 20px !important; height: 28px !important; font-size: 13px !important; }
+      table { width: 100%; font-size: 8px; }
+      thead th { font-size: 8px; }
+      tbody td { font-size: 8px; }
+      thead th, tbody td { padding: 2px 0; }
+      .clip { max-width: 100px; }
+      #tabla th:nth-child(5), #tabla td:nth-child(5) { display: none; }
+      .badge { font-size: 9px; }
+      #tabla th:nth-child(3), #tabla td:nth-child(3) { padding-left: 0; width: 70px; min-width: 70px; white-space: nowrap; }
+      #tabla td:nth-child(3) { overflow: hidden; text-overflow: ellipsis; text-align: right; padding-right: 6px; }
+      #tabla td:nth-child(4) { text-align: right !important; }
+      #tabla th:nth-child(2), #tabla td:nth-child(2) { padding-right: 0; }
+      #tabla thead th:nth-child(3) { padding-right: 3px; }
+      body { padding-top: 48px; }
+      body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
+      .content { padding-bottom: 16px; }
+      .pagination { position: fixed; top: 0; left: 0; right: 0; margin-top: 0 !important; padding: 5px; background: #fff; border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 1000; }
+      .pagination .btn { padding: 5px; font-size: 11px; }
+      .pagination #page-info { font-size: 10px; }
+      #tabla th:nth-child(1), #tabla td:nth-child(1) { width: 40px; min-width: 40px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { width: 50px; min-width: 50px; }
+      #tabla th:nth-child(4), #tabla td:nth-child(4) { padding-right: 3px; }
+      #tabla td:nth-child(4) { transform: translateX(-2px); }
+      #tabla th:nth-child(8), #tabla td:nth-child(8) { width: 65px; min-width: 65px; padding-left: 4px; }
+      #tabla th:nth-child(6), #tabla td:nth-child(6) { padding-right: 6px; }
+      .btn-activar { padding: 3px 5px !important; font-size: 10px !important; }
+    }
+  </style>
+  </head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📦 Productos</h1>
+    </div>
+    <div class="content">
+      <div id="infoBox" style="display:none; margin-bottom:10px; padding:10px; border-left:4px solid #667eea; background:#f0f7ff; border-radius:6px; color:#333;"></div>
+      <div class="filters">
+        <div style="display:flex; gap:8px; align-items:stretch;">
+          <div class="barcode-input-container" style="flex:1;">
+             <input id="input-busqueda" placeholder="🔎 Buscar por nombre o código de barras...">
+             <span class="scan-icon" id="btn-scan-search" title="Escanear código">📷</span>
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-agregar" title="Agregar producto" style="padding:0; width:26px; font-size:16px; height:34px; align-self:stretch; display:flex; align-items:center; justify-content:center;">+</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:stretch;">
+          <select id="combo-categoria" style="flex:1">
+            <option>Todas las categorías</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-nueva-cat" title="Nueva categoría" style="padding:0; width:26px; font-size:16px; height:34px; align-self:stretch; display:flex; align-items:center; justify-content:center;">+</button>
+          <select id="combo-estado" style="width:120px">
+            <option value="activos" selected>Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <button class="btn btn-primary" id="btn-refrescar" style="padding:6px 10px; width:auto;">Refrescar</button>
+          <div style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" id="btn-prev" title="Anterior" aria-label="Anterior" disabled>◀</button>
+              <button class="btn btn-secondary" id="btn-next" title="Siguiente" aria-label="Siguiente" disabled>▶</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tabla">
+          <thead>
+            <tr>
+              <th data-key="id">ID</th>
+              <th data-key="nombre">Nombre</th>
+              <th data-key="codigo">Código de barras</th>
+              <th data-key="precio">Precio (L)</th>
+              <th data-key="id_isv">ISV</th>
+              <th data-key="stock">Stock</th>
+              <th data-key="pesable">Pesable</th>
+              <th aria-label="Acciones"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="empty" colspan="8">Cargando productos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="pagination" style="display:flex; justify-content:flex-start; align-items:center; margin-top:15px;">
+        <span id="page-info" style="font-size:14px; color:#666;">Mostrando 0 de 0</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="scanner-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:500px; position:relative; display:flex; flex-direction:column; align-items:center;">
+        <button type="button" id="btn-close-scanner" style="position:absolute; top:10px; right:10px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+        <h3 style="margin-bottom:15px; text-align:center;">Escanear Código</h3>
+        <div id="reader" style="width:100%;"></div>
+    </div>
+  </div>
+
+  
+
+  <script>
+    let productos = [];
+    let sortState = { key: "id", dir: "asc" };
+    
+    // Pagination state
+    let currentPage = 1;
+    const itemsPerPage = 50;
+    let totalItems = 0;
+    let selectedIndex = -1;
+    let suggestionsBox = null;
+    let suggestionsItems = [];
+    let suggestionsIndex = -1;
+    let suggestionsAnchorInput = null;
+
+    function toTitleCase(s) {
+      const str = String(s || "").toLowerCase();
+      return str.replace(/(^|\\s)([A-Za-zÁÉÍÓÚÑáéíóúñ])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+    }
+
+    function isvBadge(id_isv) {
+      const v = Number(id_isv);
+      if (v === 3) return '<span class="badge exento">Exento</span>';
+      if (v === 1) return '<span class="badge p15">15%</span>';
+      if (v === 2) return '<span class="badge p18">18%</span>';
+      return '';
+    }
+    function mostrarInfo(mensaje) {
+      const box = document.getElementById("infoBox");
+      box.textContent = mensaje;
+      box.style.display = "block";
+      setTimeout(() => { box.style.display = "none"; }, 3000);
+    }
+    function seleccionarBusqueda() {
+      try {
+        const inp = document.getElementById("input-busqueda");
+        inp.focus();
+        inp.select();
+      } catch (e) {}
+    }
+    function productoNoEncontrado() {
+      alert("Producto no encontrado");
+      seleccionarBusqueda();
+      mostrarInfo("⚠ Producto no encontrado");
+    }
+
+    async function eliminarProducto(id, nombre) {
+      if (!confirm(`¿Está seguro de eliminar el producto "${nombre}"?`)) return;
+      try {
+        const res = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          mostrarInfo(`Producto "${nombre}" eliminado correctamente.`);
+          fetchProductos();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Error al eliminar producto");
+        }
+      } catch (e) {
+        alert("Error de conexión al eliminar producto");
+      }
+    }
+    async function activarProducto(id, nombre) {
+      try {
+        const res = await fetch(`/api/productos/${id}/activar`, { method: 'POST' });
+        if (res.ok) {
+          mostrarInfo(`Producto "${nombre}" activado correctamente.`);
+          fetchProductos(true);
+        } else {
+          const data = await res.json();
+          alert(data.error || "Error al activar producto");
+        }
+      } catch (e) {
+        alert("Error de conexión al activar producto");
+      }
+    }
+
+    function renderTabla(data) {
+      const tbody = document.querySelector("#tabla tbody");
+      tbody.innerHTML = "";
+      if (!data.length) {
+        const trEmpty = document.createElement("tr");
+        trEmpty.innerHTML = '<td class="empty" colspan="8">Sin resultados</td>';
+        tbody.appendChild(trEmpty);
+        return;
+      }
+      data.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.className = "data-row";
+        const esInactivos = (comboEstado && comboEstado.value === "inactivos");
+        tr.innerHTML = `
+          <td>${p.id ?? ""}</td>
+          <td><span class="clip">${toTitleCase(p.nombre ?? "")}</span></td>
+          <td>${p.codigo ?? ""}</td>
+          <td class="right">${p.precio != null ? Number(p.precio).toFixed(2) : ""}</td>
+          <td>${isvBadge(p.id_isv)}</td>
+          <td class="right">${p.stock ?? ""}</td>
+          <td>${p.pesable != null ? (Number(p.pesable) ? "Sí" : "No") : ""}</td>
+          <td style="text-align:left;">
+             ${
+               esInactivos
+                 ? (p.id != null
+                      ? '<button class="btn-activar" style="background:#52c41a; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer; font-size:14px;">Activar</button>'
+                      : '<button class="btn-activar" disabled title="Sin ID" style="background:#ddd; color:#777; border:none; border-radius:4px; padding:6px 10px; font-size:14px; cursor:not-allowed;">Activar</button>')
+                : (p.id != null
+                     ? '<button class="btn-eliminar icon-btn delete" title="Eliminar">🗑️</button>'
+                     : '<button class="btn-eliminar icon-btn delete" disabled title="Sin ID, no se puede eliminar">🗑️</button>')
+             }
+          </td>
+        `;
+         
+        if (esInactivos) {
+          const btnA = tr.querySelector(".btn-activar");
+          if (btnA && !btnA.disabled) {
+            btnA.addEventListener("click", (e) => {
+              e.stopPropagation();
+              activarProducto(p.id, p.nombre);
+            });
+          }
+        } else {
+          const btnE = tr.querySelector(".btn-eliminar");
+          if (btnE && !btnE.disabled) {
+            btnE.addEventListener("click", (e) => {
+              e.stopPropagation();
+              eliminarProducto(p.id, p.nombre);
+            });
+          }
+        }
+
+        // doble click para editar
+        tr.addEventListener("dblclick", () => {
+          const id = p.id ?? null;
+          const codigo = p.codigo || "";
+          const q = new URLSearchParams();
+          if (id) q.set("id", id);
+          else if (codigo) q.set("codigo", codigo);
+          window.location.href = "/editar-producto?" + q.toString();
+        });
+        tr.addEventListener("click", () => {
+          selectedIndex = Array.from(tbody.querySelectorAll("tr.data-row")).indexOf(tr);
+          updateSelectionHighlight();
+        });
+        tbody.appendChild(tr);
+      });
+      if (selectedIndex < 0 && data.length > 0) {
+        selectedIndex = 0;
+      }
+      updateSelectionHighlight();
+    }
+
+    function sortData(arr) {
+      const key = sortState.key;
+      const dir = sortState.dir === "asc" ? 1 : -1;
+      return [...arr].sort((a,b) => {
+        const va = a[key]; const vb = b[key];
+        if (!isNaN(Number(va)) && !isNaN(Number(vb))) return (Number(va) - Number(vb)) * dir;
+        return String(va || "").localeCompare(String(vb || "")) * dir;
+      });
+    }
+
+    async function fetchProductos(resetPage = false) {
+      if (resetPage) currentPage = 1;
+      
+      const queryText = (document.getElementById("input-busqueda").value || "").trim();
+      const catId = document.getElementById("combo-categoria").value;
+
+      try {
+        const params = new URLSearchParams();
+        params.set("limit", itemsPerPage);
+        params.set("offset", (currentPage - 1) * itemsPerPage);
+        
+        if (queryText) {
+          params.set("q", queryText);
+        }
+        if (catId && catId !== "Todas las categorías") {
+            params.set("categoria_id", catId);
+        }
+        const est = (comboEstado && comboEstado.value) ? comboEstado.value : "activos";
+        params.set("estado", est);
+
+        const res = await fetch("/api/productos?" + params.toString());
+        productos = await res.json();
+        
+        // Get total count from header
+        const totalHeader = res.headers.get("X-Total-Count");
+        if (totalHeader) {
+            totalItems = parseInt(totalHeader);
+        } else {
+            // Fallback if header missing (e.g. old API)
+            totalItems = productos.length; // rough guess
+        }
+
+        renderPagination();
+        
+        // Sort current page only (client side)
+        const ordenados = sortData(productos);
+        renderTabla(ordenados);
+      } catch (e) {
+        console.error(e);
+        renderTabla([]);
+      }
+    }
+    
+    function renderPagination() {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const start = totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage + 1);
+        const end = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        document.getElementById("page-info").textContent = `Mostrando ${start}-${end} de ${totalItems}`;
+        
+        const btnPrev = document.getElementById("btn-prev");
+        const btnNext = document.getElementById("btn-next");
+        
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+    }
+
+    // Event Listeners
+    document.getElementById("btn-prev").addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchProductos();
+        }
+    });
+    
+    document.getElementById("btn-next").addEventListener("click", () => {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchProductos();
+        }
+    });
+
+    const inputBusqueda = document.getElementById("input-busqueda");
+    const comboCategoria = document.getElementById("combo-categoria");
+    const comboEstado = document.getElementById("combo-estado");
+
+    function esCodigoBarras(val) {
+      const s = String(val || "").trim();
+      return /^\d{6,}$/.test(s);
+    }
+    
+    // Debounce search
+    let debounceTimer;
+    inputBusqueda.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            fetchProductos(true);
+            const q = (inputBusqueda.value || "").trim();
+            if (q.length >= 2) {
+              buscarSugerencias(inputBusqueda, q);
+            } else {
+              cerrarSugerencias();
+            }
+        }, 300);
+    });
+    
+    inputBusqueda.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        if (suggestionsBox && suggestionsItems.length && suggestionsIndex >= 0) {
+          e.preventDefault();
+          const it = suggestionsItems[suggestionsIndex];
+          const id6 = String(it.id || "").padStart(6, "0");
+          window.location.href = "/editar-producto?id=" + encodeURIComponent(it.id || id6);
+          return;
+        }
+        const v = inputBusqueda.value.trim();
+        if (esCodigoBarras(v)) {
+          e.preventDefault();
+          try {
+            const r = await fetch("/api/producto/" + encodeURIComponent(v));
+            if (r.ok) {
+              window.location.href = "/editar-producto?codigo=" + encodeURIComponent(v);
+            } else {
+              const r2 = await fetch("/api/producto-csv/" + encodeURIComponent(v));
+              if (r2.ok) {
+                const data = await r2.json();
+                const nombre = data && data.nombre ? encodeURIComponent(data.nombre) : "";
+                window.location.href = "/agregar-producto?codigo=" + encodeURIComponent(v) + (nombre ? "&nombre=" + nombre : "") + "&msg=found_csv";
+              } else {
+                productoNoEncontrado();
+              }
+            }
+          } catch (err) {
+            productoNoEncontrado();
+          }
+        } else {
+          if (selectedIndex >= 0 && selectedIndex < productos.length) {
+            e.preventDefault();
+            const p = productos[selectedIndex];
+            const id = p.id ?? null;
+            const codigo = p.codigo || "";
+            const q = new URLSearchParams();
+            if (id) q.set("id", id);
+            else if (codigo) q.set("codigo", codigo);
+            window.location.href = "/editar-producto?" + q.toString();
+          } else {
+            fetchProductos(true);
+          }
+        }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (suggestionsBox && suggestionsItems.length) {
+          moverSeleccionSugerencia(1);
+          return;
+        }
+        if (productos.length > 0) {
+          selectedIndex = Math.min(productos.length - 1, (selectedIndex < 0 ? 0 : selectedIndex + 1));
+          updateSelectionHighlight();
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (suggestionsBox && suggestionsItems.length) {
+          moverSeleccionSugerencia(-1);
+          return;
+        }
+        if (productos.length > 0) {
+          selectedIndex = Math.max(0, (selectedIndex < 0 ? 0 : selectedIndex - 1));
+          updateSelectionHighlight();
+        }
+      } else if (e.key === "Escape") {
+        cerrarSugerencias();
+      }
+    });
+    
+    comboCategoria.addEventListener("change", () => {
+        fetchProductos(true);
+    });
+    comboEstado.addEventListener("change", () => {
+        fetchProductos(true);
+    });
+
+    document.getElementById("btn-refrescar").addEventListener("click", () => {
+        inputBusqueda.value = "";
+        comboCategoria.value = ""; // Assuming "" is 'Todas las categorías' or reset logic
+        // Check how combo is populated.
+        // It has <option>Todas las categorías</option> initially.
+        // We'll reset it to first option.
+        comboCategoria.selectedIndex = 0;
+        comboEstado.value = "activos";
+        fetchProductos(true);
+    });
+    
+    function cerrarSugerencias() {
+      if (suggestionsBox && suggestionsBox.parentNode) {
+        suggestionsBox.parentNode.removeChild(suggestionsBox);
+      }
+      suggestionsBox = null;
+      suggestionsItems = [];
+      suggestionsIndex = -1;
+      suggestionsAnchorInput = null;
+    }
+    function buscarSugerencias(anchor, q) {
+      clearTimeout(window._suggTimer || 0);
+      window._suggTimer = setTimeout(async () => {
+        try {
+          const resp = await fetch(`/api/productos?q=${encodeURIComponent(q)}`);
+          if (!resp.ok) { cerrarSugerencias(); return; }
+          const arr = await resp.json();
+          if (Array.isArray(arr) && arr.length > 0) {
+            renderSugerencias(anchor, arr.slice(0, 20));
+          } else {
+            cerrarSugerencias();
+          }
+        } catch {
+          cerrarSugerencias();
+        }
+      }, 200);
+    }
+    function renderSugerencias(anchorInput, items) {
+      cerrarSugerencias();
+      const rect = anchorInput.getBoundingClientRect();
+      const box = document.createElement("div");
+      box.style.position = "absolute";
+      box.style.left = `${rect.left + window.scrollX}px`;
+      box.style.top = `${rect.bottom + window.scrollY}px`;
+      box.style.minWidth = `${rect.width}px`;
+      box.style.background = "#fff";
+      box.style.border = "1px solid #3399ff";
+      box.style.borderRadius = "6px";
+      box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+      box.style.zIndex = "9999";
+      box.style.maxHeight = "240px";
+      box.style.overflowY = "auto";
+      suggestionsItems = items;
+      suggestionsAnchorInput = anchorInput;
+      items.forEach(it => {
+        const row = document.createElement("div");
+        row.style.padding = "8px 10px";
+        row.style.cursor = "pointer";
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.alignItems = "center";
+        const id6 = String(it.id || "").padStart(6, "0");
+        const labelCode = (it.codigo && String(it.codigo).trim() !== "") ? it.codigo : id6;
+        const stk = (it.stock != null ? Number(it.stock) : 0);
+        const stockColor = stk <= 0 ? "#ff4d4f" : "#52c41a";
+        row.innerHTML = `<span>[${labelCode}] ${it.nombre || ""}</span><span style="color:#666;font-size:12px;">${Number(it.precio || 0).toFixed(2)}</span><span style="color:${stockColor};font-size:12px;">Stock: ${stk}</span>`;
+        row.addEventListener("mouseenter", ()=>row.style.background="#e6f7ff");
+        row.addEventListener("mouseleave", ()=>row.style.background="transparent");
+        row.addEventListener("click", () => {
+          window.location.href = "/editar-producto?id=" + encodeURIComponent(it.id || id6);
+        });
+        box.appendChild(row);
+      });
+      document.body.appendChild(box);
+      suggestionsBox = box;
+      suggestionsIndex = -1;
+    }
+    function resaltarSugerencia(idx) {
+      if (!suggestionsBox) return;
+      const rows = Array.from(suggestionsBox.children);
+      rows.forEach((r, i) => { r.style.background = i === idx ? "#ccecff" : "transparent"; });
+      const el = rows[idx];
+      if (el) {
+        const top = el.offsetTop;
+        const bottom = top + el.offsetHeight;
+        if (top < suggestionsBox.scrollTop) {
+          suggestionsBox.scrollTop = top;
+        } else if (bottom > suggestionsBox.scrollTop + suggestionsBox.clientHeight) {
+          suggestionsBox.scrollTop = bottom - suggestionsBox.clientHeight;
+        }
+      }
+    }
+    function moverSeleccionSugerencia(delta) {
+      if (!suggestionsBox || !suggestionsItems.length) return;
+      const len = suggestionsItems.length;
+      suggestionsIndex = suggestionsIndex + delta;
+      if (suggestionsIndex < 0) suggestionsIndex = 0;
+      if (suggestionsIndex > len - 1) suggestionsIndex = len - 1;
+      resaltarSugerencia(suggestionsIndex);
+    }
+    document.addEventListener("click", (e) => {
+      if (suggestionsBox && !suggestionsBox.contains(e.target) && e.target !== inputBusqueda) {
+        cerrarSugerencias();
+      }
+    });
+    
+    document.getElementById("btn-agregar").addEventListener("click", () => {
+      const sel = document.getElementById("combo-categoria");
+      let catVal = sel && sel.value ? sel.value : "";
+      // Si el valor es el texto por defecto o vacío, no filtrar
+      if (catVal === "Todas las categorías") catVal = "";
+      
+      if (catVal) {
+          window.location.href = "/agregar-producto?categoria_id=" + encodeURIComponent(catVal);
+      } else {
+          window.location.href = "/agregar-producto";
+      }
+    });
+
+    // Sort por encabezado
+    document.querySelectorAll("#tabla thead th").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        if (!key) return;
+        if (sortState.key === key) {
+          sortState.dir = sortState.dir === "asc" ? "desc" : "asc";
+        } else {
+          sortState.key = key; sortState.dir = "asc";
+        }
+        // Re-render sorted current page
+        const ordenados = sortData(productos);
+        renderTabla(ordenados);
+      });
+    });
+
+    // Cargar categorías en el filtro
+    (async () => {
+      try {
+        const res = await fetch("/api/categorias");
+        const cats = await res.json();
+        const sel = document.getElementById("combo-categoria");
+        sel.innerHTML = "";
+        const optAll = document.createElement("option");
+        optAll.value = "";
+        optAll.textContent = "Todas las categorías";
+        sel.appendChild(optAll);
+        cats.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.nombre;
+          sel.appendChild(opt);
+        });
+        
+        // Restore state if needed (not fully implemented in this version, but good for future)
+      } catch (e) {}
+    })();
+    
+    document.getElementById("btn-nueva-cat").addEventListener("click", async () => {
+      const nombre = prompt("Nombre de la nueva categoría:");
+      if (!nombre || !String(nombre).trim()) return;
+      try {
+        const r = await fetch("/api/categorias", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: String(nombre).trim() })
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          alert(data.error || "Error al crear categoría");
+          return;
+        }
+        // recargar lista y seleccionar nueva
+        const res = await fetch("/api/categorias");
+        const cats = await res.json();
+        const sel = document.getElementById("combo-categoria");
+        sel.innerHTML = "";
+        const optAll = document.createElement("option");
+        optAll.value = "";
+        optAll.textContent = "Todas las categorías";
+        sel.appendChild(optAll);
+        cats.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.nombre;
+          sel.appendChild(opt);
+        });
+        sel.value = data.id;
+        fetchProductos(true);
+      } catch (e) {
+        alert("Error al crear categoría");
+      }
+    });
+
+    // Inicial
+    window.addEventListener('load', () => {
+      document.getElementById('input-busqueda').focus();
+      const params = new URLSearchParams(window.location.search);
+      const codigo = params.get('codigo');
+      const msg = params.get('msg');
+      const nuevaCat = params.get('nueva_categoria_id');
+      
+      // Delay initial fetch slightly to allow categories to load if possible, 
+      // but fetchProductos handles empty categories fine.
+      
+      if (nuevaCat) {
+        // We need to wait for categories to load to select it.
+        // For now, just trigger fetch. Selection might fail if cats not loaded.
+        // Improvement: chain the promises.
+      }
+      
+      if (codigo) {
+        inputBusqueda.value = codigo;
+        fetchProductos(true);
+      } else {
+        fetchProductos(true);
+      }
+      
+      if (msg === 'found_mysql') {
+        mostrarInfo('✓ Encontrado en MySQL');
+      }
+    });
+
+    function updateSelectionHighlight() {
+      const rows = Array.from(document.querySelectorAll("#tabla tbody tr.data-row"));
+      rows.forEach(r => r.style.background = "");
+      if (selectedIndex >= 0 && selectedIndex < rows.length) {
+        rows[selectedIndex].style.background = "#e6f0ff";
+        rows[selectedIndex].scrollIntoView({ block: "nearest" });
+      }
+    }
+    
+
+    // Scanner Logic
+    let html5QrcodeScanner = null;
+    const scannerModal = document.getElementById('scanner-modal');
+    
+    document.getElementById('btn-scan-search').addEventListener('click', startScanner);
+    document.getElementById('btn-close-scanner').addEventListener('click', stopScanner);
+    
+    // Close modal if clicked outside
+    scannerModal.addEventListener('click', (e) => {
+        if (e.target === scannerModal) stopScanner();
+    });
+    
+
+    function startScanner() {
+        scannerModal.style.display = 'flex';
+        if (html5QrcodeScanner) return; // Already running or initializing
+
+        // Use Html5Qrcode class
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        // Prefer back camera (environment)
+        html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch(err => {
+             console.error("Error starting scanner", err);
+             alert("No se pudo iniciar la cámara: " + err);
+             scannerModal.style.display = 'none';
+             html5QrcodeScanner = null;
+        });
+    }
+
+    function stopScanner() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+                scannerModal.style.display = 'none';
+            }).catch(err => {
+                console.error("Failed to stop scanner", err);
+                scannerModal.style.display = 'none';
+                html5QrcodeScanner = null;
+            });
+        } else {
+            scannerModal.style.display = 'none';
+        }
+    }
+
+    async function onScanSuccess(decodedText, decodedResult) {
+        stopScanner();
+        const input = document.getElementById('input-busqueda');
+        input.value = decodedText;
+        if (esCodigoBarras(decodedText)) {
+            try {
+                const r = await fetch("/api/producto/" + encodeURIComponent(decodedText));
+                if (r.ok) {
+                    window.location.href = "/editar-producto?codigo=" + encodeURIComponent(decodedText);
+                } else {
+                    const r2 = await fetch("/api/producto-csv/" + encodeURIComponent(decodedText));
+                    if (r2.ok) {
+                        const data = await r2.json();
+                        const nombre = data && data.nombre ? encodeURIComponent(data.nombre) : "";
+                        window.location.href = "/agregar-producto?codigo=" + encodeURIComponent(decodedText) + (nombre ? "&nombre=" + nombre : "") + "&msg=found_csv";
+                    } else {
+                        productoNoEncontrado();
+                    }
+                }
+            } catch (err) {
+                productoNoEncontrado();
+            }
+        } else {
+            fetchProductos(true);
+        }
+    }
+  </script>
+</body>
+</html>

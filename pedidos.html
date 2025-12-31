@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+   <style>
+      body { margin: 0; padding: 10px; background: #f4f6fb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
+      :root { --menu-height: 88px; }
+      .top-spacer { display: none; width: 100%; height: var(--menu-height); }
+      .top-header { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; }
+    .top-header h1 { margin:0; color:#333; font-size:18px; flex:1; text-align:center; }
+    .total-box { background:#fff; border:1px solid #3399ff; border-radius:6px; padding:4px 10px; font-weight:bold; color:#000; }
+    .corr-box { background:#fff; border:1px solid #6c9dff; border-radius:6px; padding:4px 10px; font-weight:bold; color:#000; min-width:140px; text-align:center; }
+    .metrics { display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+      .main { display:flex; flex-direction:column; gap:10px; margin-top:10px; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+      .left { flex:1; display:flex; flex-direction:column; gap:10px; }
+      .left { min-height: 0; }
+    .client-box { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:6px 8px; }
+    .client-box h3 { margin:0 0 6px; color:#3399ff; font-size:14px; }
+    .form-group { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .form-group label { width:90px; color:#555; }
+    .form-group input { flex:1; padding:6px; border:1px solid #ddd; border-radius:4px; }
+      .grid { background:#fff; border:1px solid #ccc; border-radius:6px; overflow:auto; flex: 1 1 auto; min-height: 0; }
+    table { width:100%; border-collapse:collapse; font-size:11px; }
+    thead { background:#f6f6f6; position:sticky; top:0; z-index:1; }
+    th, td { border:1px solid #e0e0e0; padding:6px; }
+    td input { width:100%; border:none; background:transparent; font-size:12px; outline:none; }
+    .right { width:100%; display:flex; flex-direction:row; align-items:center; gap:2px; overflow-x:auto; white-space:nowrap; }
+    .action-btn { background:transparent; border:none; border-radius:8px; width:auto; height:auto; display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; padding:2px; }
+    .action-btn span { font-size: 11px; color: #333; text-align: center; line-height: 1.1; font-weight: 600; }
+    .action-btn:hover { background: rgba(0,0,0,0.05); }
+    .action-btn .icon { width:28px; height:28px; object-fit: contain; }
+    .btn-icon img { width:14px !important; height:14px !important; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 10000000; }
+    .modal { background: #ffffff; border: 1px solid #3399ff; border-radius: 10px; width: 700px; max-width: 95vw; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .modal-header { padding: 12px 16px; border-bottom: 1px solid #e0f1ff; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #1a252f; }
+    .modal-body { padding: 16px; display: flex; gap: 16px; }
+    .modal-row { display: flex; gap: 10px; align-items: center; }
+    .modal-row label { width: 140px; color: #555; font-size: 14px; }
+    .modal-row input, .modal-row select { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .modal-footer { padding: 12px 16px; border-top: 1px solid #e0f1ff; display: flex; gap: 10px; justify-content: flex-end; }
+    .modal-left { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .btn { padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: #3399ff; color: #fff; }
+    .btn-secondary { background: #f0f6ff; color: #1a252f; border: 1px solid #b3e0ff; }
+    .btn-icon { background: transparent; border: none; cursor: pointer; font-size: 1.2rem; padding: 0; margin: 0; }
+    .btn-icon:hover { opacity: 0.7; }
+    #tabla-pedido td.acciones { font-size: 0; }
+    .action-btn.small { width: 80px; height: 32px; }
+    .mobile-actions { position: fixed; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); width: 100%; height: 50px; display: flex; align-items: center; justify-content: space-around; background: #ffffff; border-top: 1px solid #e0e0e0; padding: 4px; box-sizing: border-box; z-index: 999999; visibility: visible; transition: transform .25s ease, opacity .2s; }
+    .mobile-actions.collapsed { transform: translateY(100%); opacity: 0; pointer-events: none; }
+    .mobile-actions.expanded { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .mobile-actions-toggle { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 2px); z-index: 2147483647; background: #3399ff; color: #ffffff; border: 1px solid #3399ff; border-radius: 16px; padding: 1px 12px; font-size: 10px; line-height: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); cursor: pointer; }
+    .top-header { position: relative; z-index: 1000000; }
+    .codigo-input { position: relative; }
+    .codigo-input .scan-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: none; }
+    @media (min-width: 1601px) {
+      .codigo-input .scan-btn { display: none !important; }
+      .top-header { flex-wrap: nowrap; }
+      .main { flex-direction: row; }
+      .right { position: static; width: 110px; flex-direction: column; align-items: stretch; gap: 8px; overflow: visible; white-space: normal; }
+      .mobile-actions, .mobile-actions-toggle { display: none !important; }
+      .action-btn { height: auto; flex: 0 0 auto; padding: 4px; }
+      .action-btn .icon { width:36px; height:36px; }
+      .action-btn span { display: block; font-size: 11px; }
+      table { font-size: 14px; }
+      th, td { padding: 9px; }
+      td input { font-size: 14px; }
+      #tabla-pedido td.acciones { display:flex; align-items:center; justify-content:center; gap:10px; }
+      .btn-icon { padding: 2px 4px; }
+      .btn-icon img { width:20px !important; height:20px !important; }
+    }
+    @media (max-width: 1600px) {
+      .row-empty .scan-btn { display: inline-flex !important; align-items: center; justify-content: center; width: 24px; height: 24px; }
+      .top-header { flex-wrap:wrap; gap:8px; }
+      .top-header h1 { font-size:16px; flex:1 0 100%; text-align:center; }
+      .metrics { gap:6px; order: 1; width: 100%; display: flex; flex-wrap: nowrap; }
+      .metrics .total-box, .metrics .corr-box { flex: 0 0 auto; min-width: 88px; padding: 3px 8px; font-size: 12px; }
+      .total-box { text-align:center; }
+      html, body { height: 100%; }
+      .main { flex-direction:column; min-height: 100vh; padding-bottom: 0; }
+      .right { display: none !important; }
+      /* Barra móvil simplificada y robusta */
+      .mobile-actions { 
+        position: fixed !important; 
+        left: 0 !important; 
+        right: 0 !important; 
+        bottom: env(safe-area-inset-bottom, 0px) !important; 
+        width: 100% !important; 
+        height: 50px !important; 
+        display: flex !important; 
+        flex-direction: row !important;
+        align-items: center !important; 
+        justify-content: space-around !important; 
+        background: #ffffff !important; 
+        border-top: 1px solid #e0e0e0 !important; 
+        padding: 4px !important; 
+        box-sizing: border-box !important; 
+        z-index: 999999 !important; 
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important; 
+        visibility: visible !important;
+      }
+      body { padding: 10px 10px 70px 10px !important; }
+      .main { padding-bottom: 70px !important; }
+      .grid { margin-bottom: 70px !important; }
+      
+      .action-btn { height:40px; flex:0 0 auto; padding:4px; flex-direction:row; gap:0; min-width: 40px; }
+      .action-btn .icon { width:22px; height:22px; }
+      .action-btn span { display:block; font-size: 11px; }
+      .top-header .action-btn { height:36px; width:90px; }
+      .overlay .modal { width: 95vw; height: 95vh; display: flex; flex-direction: column; }
+      .modal-body { flex-direction: column; overflow: auto; }
+      .btn-icon { padding: 0; margin: 0; }
+      .btn-icon img { width:13px !important; height:13px !important; }
+      .mobile-actions-toggle { display: block !important; }
+    }
+    @media (max-width: 480px) {
+      .row-empty .scan-btn { display: inline-flex !important; align-items: center; justify-content: center; width: 24px; height: 24px; }
+      .top-spacer { display: block; height: 40px; flex-shrink: 0; }
+      body { padding: 6px 6px 70px 6px !important; overflow: hidden !important; }
+      .top-header { gap:6px; }
+      .top-header h1 { font-size:15px; }
+      .metrics { gap:4px; }
+      .metrics .total-box, .metrics .corr-box { font-size: 11px; padding: 3px 6px; min-width: 76px; }
+      .client-box { padding: 4px 6px; margin-top: 0; }
+      .client-box h3 { font-size: 12px; }
+      .form-group label { width: 68px; font-size: 9px; }
+      .form-group input { font-size: 11px; padding: 4px; }
+      table { font-size: 10px; }
+      thead th, tbody td { padding: 4px; }
+      tr { line-height: 1.1; }
+      #tabla-pedido thead th:nth-child(6),
+      #tabla-pedido tbody td:nth-child(6),
+      #tabla-pedido thead th:nth-child(8),
+      #tabla-pedido tbody td:nth-child(8) { display: none; }
+      .right { display: none !important; }
+      .mobile-actions { position: static !important; width: 100% !important; height: 48px !important; display: flex !important; align-items: center !important; justify-content: space-around !important; background: #ffffff !important; border: 1px solid #e0e0e0 !important; border-radius: 6px !important; padding: 4px !important; box-sizing: border-box !important; z-index: 1 !important; visibility: visible !important; transform: none !important; opacity: 1 !important; pointer-events: auto !important; margin: 4px 0 !important; }
+      .mobile-actions.collapsed, .mobile-actions.expanded { transform: none !important; opacity: 1 !important; pointer-events: auto !important; }
+      .mobile-actions-toggle { display: none !important; }
+      .main { padding-bottom: 0 !important; gap: 0 !important; margin-top: 0 !important; }
+      .left { gap: 0 !important; }
+      .grid { margin-bottom: 0 !important; flex: none !important; height: 460px !important; margin-top: 2px; }
+      .overlay .modal { margin-bottom: 0 !important; }
+      
+      .main { min-height: 100vh; padding-bottom: 0; }
+      .action-btn { height: 36px; flex: 0 0 auto; padding:4px; flex-direction:row; gap:0; min-width: 36px; justify-content: center; }
+      .action-btn .icon { width:24px; height:24px; }
+      .action-btn span { display:none !important; }
+      .top-header .action-btn { height:32px; width:80px; }
+      .overlay .modal { width: 98vw; height: auto; max-height: 50vh; display: flex; flex-direction: column; }
+      .modal-body { overflow-y: auto; flex: 1; }
+      .modal-row input, .modal-row select { font-size: 14px; }
+      .btn { padding: 10px 12px; font-size: 14px; }
+      .btn-icon { padding: 0; margin: 0; }
+      .btn-icon img { width:12px !important; height:12px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-spacer"></div>
+  <div class="top-header">
+    <h1>Pedidos</h1>
+    <div class="metrics">
+      <div class="total-box">Total pedido: <span id="header-total">L 0.00</span></div>
+      <div class="corr-box"><span id="header-corr">—</span></div>
+      <div class="corr-box">Estado: <span id="header-estado">—</span></div>
+    </div>
+    <!-- Eliminado: búsqueda por número y botón Cargar; Facturar pasa al panel de acciones -->
+  </div>
+  <div class="main">
+    <div class="left">
+      <div class="client-box">
+        <h3>Información de Cliente</h3>
+        <div class="form-group">
+          <label>RTN No:</label>
+          <input id="rtn-input" list="rtn-list" placeholder="Buscar RTN...">
+          <datalist id="rtn-list"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Cliente:</label>
+          <input id="cliente-input" placeholder="Nombre del cliente" list="cliente-list">
+          <datalist id="cliente-list"></datalist>
+        </div>
+      </div>
+      <div class="grid">
+        <table id="tabla-pedido">
+          <thead>
+            <tr>
+              <th style="width:30px; text-align:center;">No.</th>
+              <th style="width:100px;">Código</th>
+              <th>Descripción</th>
+              <th style="width:60px; text-align:center;">Cant.</th>
+              <th style="width:80px; text-align:right;">Precio</th>
+              <th style="width:60px; text-align:center;">Stock</th>
+              <th style="width:90px; text-align:right;">Total</th>
+              <th style="width:60px; text-align:center;">ISV</th>
+              <th style="width:130px; text-align:center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="mobile-actions collapsed" style="width:100%; height:50px; display:flex; align-items:center; justify-content:space-around; background:#ffffff; border:1px solid #e0e0e0; border-radius:6px; padding:4px; box-sizing:border-box; visibility:visible;">
+          <button class="action-btn" onclick="abrirPedidosOverlay()" title="Pedidos">
+            <img src="/iconos/pedidos.png" class="icon" alt="Pedidos">
+            <span>Pedidos</span>
+          </button>
+          <button class="action-btn" onclick="redirFacturarVentas()" title="Facturar">
+            <img src="/static/iconos/ventas.svg" class="icon" alt="Facturar">
+            <span>Facturar</span>
+          </button>
+          <button class="action-btn" onclick="guardarPedido()" title="Guardar">
+            <img src="/iconos/guardar.png" class="icon" alt="Guardar">
+            <span>Guardar</span>
+          </button>
+          <button class="action-btn" onclick="limpiarTabla()" title="Eliminar">
+            <img src="/iconos/eliminar.png" class="icon" alt="Eliminar">
+            <span>Eliminar</span>
+          </button>
+          <button class="action-btn" onclick="limpiarTodo()" title="Limpiar">
+            <img src="/iconos/limpiar.png" class="icon" alt="Limpiar">
+            <span>Limpiar</span>
+          </button>
+          <button class="action-btn" onclick="guardarCambiosPedido()" title="Guardar cambios">
+            <img src="/iconos/actualizar.png" class="icon" alt="Actualizar">
+            <span>Actualizar</span>
+          </button>
+      </div>
+      <div id="mobile-actions-toggle" class="mobile-actions-toggle" onclick="toggleMobileActions()">Menú</div>
+    </div>
+    <div class="right">
+      <button class="action-btn" onclick="abrirPedidosOverlay()" title="Pedidos">
+        <img src="/iconos/pedidos.png" class="icon" alt="Pedidos">
+        <span>Pedidos</span>
+      </button>
+      <button class="action-btn" onclick="redirFacturarVentas()" title="Facturar">
+        <img src="/static/iconos/ventas.svg" class="icon" alt="Facturar">
+        <span>Facturar</span>
+      </button>
+      <button class="action-btn" onclick="guardarPedido()" title="Guardar">
+        <img src="/iconos/guardar.png" class="icon" alt="Guardar">
+        <span>Guardar</span>
+      </button>
+      <button class="action-btn" onclick="limpiarTabla()" title="Eliminar">
+        <img src="/iconos/eliminar.png" class="icon" alt="Eliminar">
+        <span>Eliminar</span>
+      </button>
+      <button class="action-btn" onclick="limpiarTodo()" title="Limpiar">
+        <img src="/iconos/limpiar.png" class="icon" alt="Limpiar">
+        <span>Limpiar</span>
+      </button>
+      <button class="action-btn" onclick="guardarCambiosPedido()" title="Guardar cambios">
+        <img src="/iconos/actualizar.png" class="icon" alt="Actualizar">
+        <span>Actualizar</span>
+      </button>
+    </div>
+  </div>
+
+
+  <div class="overlay" id="pedidos-overlay" tabindex="-1">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span>Pedidos</span>
+        <button class="btn btn-secondary" onclick="cerrarPedidosOverlay()">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-left">
+          <div class="modal-row" style="width:100%;">
+            <label>Estado</label>
+            <select id="pedidos-filter" onchange="refrescarPedidosPendientes()">
+              <option value="pendiente" selected>Pendientes</option>
+              <option value="">Todos</option>
+              <option value="generado">Generados</option>
+            </select>
+          </div>
+          <div class="modal-row" style="width:100%;">
+            <label>Buscar</label>
+            <input type="text" id="pedidos-search" placeholder="Número, cliente o RTN" oninput="buscarPedidosPendientes()">
+          </div>
+          <div style="max-height:60vh; overflow:auto; border:1px solid #e0f1ff; border-radius:6px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Número</th>
+                  <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Cliente</th>
+                  <th style="padding:6px; border-bottom:1px solid #e0f1ff; text-align:right;">Total</th>
+                  <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="pedidos-list-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="refrescarPedidosPendientes()">Refrescar</button>
+      <button class="btn btn-secondary" onclick="reactivarPedidoOverlay()"><img src="/iconos/activar.png" alt="+" style="width:16px;height:16px; vertical-align:middle; margin-right:6px;">Reactivar</button>
+      <button class="btn btn-secondary" onclick="desactivarPedidoOverlay()"><img src="/iconos/desactivar.png" alt="-" style="width:16px;height:16px; vertical-align:middle; margin-right:6px;">Desactivar</button>
+      <button class="btn btn-primary" onclick="cargarPedidoSeleccionadoOverlay()">Cargar</button>
+    </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="scanner-modal" tabindex="-1" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span>Escanear código</span>
+        <button class="btn btn-secondary" onclick="stopScanner()">✖</button>
+      </div>
+      <div class="modal-body">
+        <div id="reader" style="width:100%; max-width:380px; margin:0 auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="stopScanner()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @media (max-width: 480px) {
+      .modal-footer {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px;
+        background: #f9f9f9;
+        border-top: 1px solid #e0e0e0;
+        flex-shrink: 0; /* Asegura que el footer no se encoja */
+      }
+      .modal-footer .btn {
+        flex: 1 1 45%; /* Botones en dos columnas */
+        font-size: 12px;
+        padding: 8px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+    }
+  </style>
+
+  <script>
+    let html5QrcodeScanner = null;
+    let scannerInputTarget = null;
+    let mobileMenuTimer = null;
+    function startScannerFor(input){
+      scannerInputTarget = input;
+      const modal = document.getElementById('scanner-modal');
+      modal.style.display = 'flex';
+      if (html5QrcodeScanner) return;
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+      .catch(err => {
+        alert("No se pudo iniciar la cámara: " + err);
+        stopScanner();
+      });
+    }
+    function onScanSuccess(decodedText, decodedResult){
+      stopScanner();
+      const input = scannerInputTarget;
+      if (input) {
+        input.value = decodedText;
+        buscarProducto(input);
+      }
+    }
+    function stopScanner(){
+      const modal = document.getElementById('scanner-modal');
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          html5QrcodeScanner.clear();
+          html5QrcodeScanner = null;
+          modal.style.display = 'none';
+        }).catch(err => {
+          modal.style.display = 'none';
+          html5QrcodeScanner = null;
+        });
+      } else {
+        modal.style.display = 'none';
+      }
+    }
+    const tbody = document.querySelector("#tabla-pedido tbody");
+    function esCodigoBarras(val){ const s = String(val||"").trim(); return /^\d{6,}$/.test(s); }
+    let suggestionsBox = null;
+    let suggestionsItems = [];
+    let suggestionsIndex = -1;
+    let suggestionsAnchorInput = null;
+    function agregarFila(){
+      const index = tbody.rows.length + 1;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="text-align:center;">${index}</td>
+        <td>
+          <div class="codigo-input">
+            <input type="text" class="codigo" onkeydown="checkEnter(event,this)" oninput="handleCodigoInput(this)" onchange="buscarProducto(this)">
+            <button class="btn-icon scan-btn" onclick="startScannerFor(this.closest('tr').querySelector('.codigo'))">📷</button>
+          </div>
+        </td>
+        <td class="descripcion"></td>
+        <td><input type="number" class="cantidad" value="1.00" min="1" step="0.01" oninput="calcularFila(this.closest('tr'))" onblur="formatearCantidad(this)" style="text-align:center;" placeholder="Cantidad"></td>
+        <td class="precio" style="text-align:right;"></td>
+        <td class="stock" style="text-align:center;"></td>
+        <td class="total-fila" style="text-align:right;"></td>
+        <td class="isv" style="text-align:center;"></td>
+        <td class="acciones" style="text-align:center;">
+          <button class="btn-icon" onclick="aumentarCantidadFila(this)"><img src="/iconos/arriba.png" alt="Arriba" style="width:16px;height:16px;"></button>
+          <button class="btn-icon" onclick="reducirCantidadFila(this)"><img src="/iconos/abajo.png" alt="Abajo" style="width:16px;height:16px;"></button>
+          <button class="btn-icon" onclick="borrarFila(this)"><img src="/iconos/eliminar.png" alt="x" style="width:16px;height:16px;"></button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      tr.classList.add("row-empty");
+      const codeInput = tr.querySelector(".codigo");
+      const scanBtn = tr.querySelector(".scan-btn");
+      if(scanBtn){ scanBtn.style.display = (window.innerWidth <= 1600) ? "inline-flex" : "none"; }
+      if(codeInput){
+        codeInput.addEventListener("input", ()=>{
+          const empty = !codeInput.value.trim();
+          tr.classList.toggle("row-empty", empty);
+          const sb = tr.querySelector(".scan-btn");
+          if(sb){ sb.style.display = (empty && window.innerWidth <= 1600) ? "inline-flex" : "none"; }
+        });
+      }
+      tr.querySelector(".codigo").focus();
+    }
+    function renumerar(){ Array.from(tbody.rows).forEach((tr,i)=>tr.cells[0].textContent = i+1); }
+    function limpiarTabla(){ if(confirm("¿Eliminar todos los productos?")){ tbody.innerHTML=""; agregarFila(); recalcularTotales(); } }
+    function limpiarTodo(){ tbody.innerHTML=""; agregarFila(); recalcularTotales(); document.getElementById("rtn-input").value=""; document.getElementById("cliente-input").value=""; actualizarCorrHeader(); }
+    function checkEnter(e,input){
+      if(e.key==="Enter"){
+        e.preventDefault();
+        if(suggestionsBox && suggestionsItems.length && suggestionsIndex >= 0){
+          const it = suggestionsItems[suggestionsIndex];
+          const id6 = String(it.id || "").padStart(6, "0");
+          input.value = id6;
+          closeSuggestions();
+          buscarProducto(input).then(ok=>{ if(!ok) return; const dest = tbody.lastElementChild?.querySelector(".codigo"); if(dest) dest.focus(); });
+          return;
+        }
+        buscarProducto(input).then(ok=>{ if(!ok) return; const dest = tbody.lastElementChild?.querySelector(".codigo"); if(dest) dest.focus(); });
+      }
+      if(e.key==="ArrowDown"){
+        e.preventDefault();
+        if(suggestionsBox && suggestionsItems.length){ moveSuggestionSelection(1); return; }
+        const tr=input.closest("tr"); const next=tr.nextElementSibling; if(next){ const code=next.querySelector(".codigo"); if(code) code.focus(); }
+      }
+      if(e.key==="ArrowUp"){
+        e.preventDefault();
+        if(suggestionsBox && suggestionsItems.length){ moveSuggestionSelection(-1); return; }
+        const tr=input.closest("tr"); const prev=tr.previousElementSibling; if(prev){ const code=prev.querySelector(".codigo"); if(code) code.focus(); }
+      }
+      if(e.key==="Escape"){ closeSuggestions(); }
+    }
+    async function buscarProducto(input){
+      if(input._searching) return false;
+      input._searching = true;
+      const tr = input.closest("tr"); const codigo = input.value.trim(); 
+      if(!codigo) { input._searching = false; return false; }
+      try{
+        const r = await fetch(`/api/producto/${encodeURIComponent(codigo)}`);
+        if(!r.ok){ alert("El código no existe"); input.focus(); input.select(); return false; }
+        const p = await r.json();
+        const precio = typeof p.precio==="number" ? p.precio : parseFloat(p.precio)||0;
+        const isvId = parseInt(p.id_isv || 3, 10);
+        const isvLabel = isvId === 1 ? "15%" : (isvId === 2 ? "18%" : "Exento");
+        try{
+          const id6 = String(p.id != null ? p.id : "").padStart(6,"0");
+          if(id6 && /^\d{6}$/.test(id6)) input.value = id6;
+        }catch(e){}
+        tr.querySelector(".descripcion").textContent = p.nombre || "";
+        tr.querySelector(".precio").textContent = precio.toFixed(2);
+        tr.querySelector(".stock").textContent = (p.stock != null ? Number(p.stock) : 0);
+        tr.querySelector(".isv").textContent = isvLabel;
+        const qty = tr.querySelector(".cantidad");
+        const esPesable = (p.pesable === 1 || p.pesable === "1" || p.pesable === true);
+        tr.dataset.pesable = esPesable ? "1" : "0";
+        if(esPesable){ qty.type="text"; qty.value=""; qty.removeAttribute("min"); qty.placeholder="Ingrese peso"; qty.focus(); }
+        else { qty.type="number"; if(!qty.value || qty.value.trim()==="") qty.value="1.00"; qty.min="1"; qty.step="0.01"; qty.placeholder="Cantidad"; }
+        calcularFila(tr);
+        if(tr === tbody.lastElementChild && !esPesable){ agregarFila(); }
+        recalcularTotales();
+        tr.classList.remove("row-empty");
+        const sb = tr.querySelector(".scan-btn"); if(sb){ sb.style.display = "none"; }
+        return true;
+      } catch(e){ alert("El código no existe"); input.focus(); input.select(); return false; }
+      finally { setTimeout(() => { input._searching = false; }, 300); }
+    }
+    function formatearCantidad(input){
+      const tr = input.closest("tr"); const esPesable = tr?.dataset?.pesable === "1";
+      const raw = String(input.value||"").trim().replace(/[^0-9.,]/g,"").replace(",",".");
+      let val = parseFloat(raw); if(isNaN(val)) val = esPesable ? 0.01 : 1.00;
+      if(esPesable){ if(val<0.01) val=0.01; } else { if(val<1.00) val=1.00; }
+      input.value = val.toFixed(2); calcularFila(tr);
+    }
+    function calcularFila(tr){
+      const precio = parseFloat(tr.querySelector(".precio").textContent)||0;
+      const qtyEl = tr.querySelector(".cantidad");
+      const esPesable = tr.dataset.pesable === "1";
+      let cantidad = 0;
+      if(esPesable){ const raw=String(qtyEl.value||"").trim().replace(/[^0-9.,]/g,"").replace(",","."); cantidad = parseFloat(raw)||0; }
+      else { cantidad = parseFloat(qtyEl.value)||0; }
+      const total = precio * cantidad;
+      tr.querySelector(".total-fila").textContent = total.toFixed(2);
+      recalcularTotales();
+    }
+    function aumentarCantidadFila(btn){ const tr=btn.closest("tr"); const input=tr.querySelector(".cantidad"); const esPesable=tr.dataset.pesable==="1"; let val=parseFloat(String(input.value||"").replace(",", "."))||0; if(esPesable){ val=val+0.10; if(val<0.01) val=0.01; } else { val=(val||1)+1.00; if(val<1.00) val=1.00; } input.value=val.toFixed(2); calcularFila(tr); }
+    function reducirCantidadFila(btn){ const tr=btn.closest("tr"); const input=tr.querySelector(".cantidad"); const esPesable=tr.dataset.pesable==="1"; let val=parseFloat(String(input.value||"").replace(",", "."))|| (esPesable?0:1); if(esPesable){ val=Math.max(val-0.10, 0.01); } else { val=Math.max(val-1.00, 1.00); } input.value=val.toFixed(2); calcularFila(tr); }
+    function borrarFila(btn){
+      const tr = btn.closest("tr"); const esUltima = tr === tbody.lastElementChild;
+      const codigoVal = (tr.querySelector(".codigo")?.value||"").trim(); const descVal = (tr.querySelector(".descripcion")?.textContent||"").trim(); const precioVal=(tr.querySelector(".precio")?.textContent||"").trim(); const totalVal=(tr.querySelector(".total-fila")?.textContent||"").trim();
+      const enBlanco = !codigoVal && !descVal && !precioVal && !totalVal;
+      if(esUltima && enBlanco){
+        const qty = tr.querySelector(".cantidad"); tr.querySelector(".codigo").value=""; tr.querySelector(".descripcion").textContent=""; qty.type="number"; qty.value="1.00"; qty.min="1"; qty.step="0.01"; qty.placeholder="Cantidad"; tr.querySelector(".precio").textContent=""; tr.querySelector(".total-fila").textContent=""; tr.querySelector(".isv").textContent=""; tr.dataset.pesable="0"; recalcularTotales(); tr.querySelector(".codigo").focus(); return;
+      }
+      if(tbody.rows.length>1){ tr.remove(); renumerar(); recalcularTotales(); const last=tbody.lastElementChild; if(last){ const code=last.querySelector(".codigo"); const v=(code?.value||"").trim(); if(!v){ code.focus(); } else { agregarFila(); tbody.lastElementChild.querySelector(".codigo").focus(); } } else { agregarFila(); tbody.lastElementChild.querySelector(".codigo").focus(); } }
+      else { tr.querySelector(".codigo").value=""; tr.querySelector(".descripcion").textContent=""; const qty=tr.querySelector(".cantidad"); qty.type="number"; qty.value="1.00"; qty.min="1"; qty.step="0.01"; qty.placeholder="Cantidad"; tr.querySelector(".precio").textContent=""; tr.querySelector(".total-fila").textContent=""; tr.querySelector(".isv").textContent=""; tr.dataset.pesable="0"; tr.classList.add("row-empty"); const sb=tr.querySelector(".scan-btn"); if(sb){ sb.style.display = (window.innerWidth <= 1600) ? "inline-flex" : "none"; } recalcularTotales(); tr.querySelector(".codigo").focus(); }
+    }
+    function recalcularTotales(){
+      let ex=0, g15=0, g18=0, i15=0, i18=0;
+      Array.from(tbody.rows).forEach(tr=>{
+        const totalFila = parseFloat(tr.querySelector(".total-fila").textContent)||0;
+        const imp = tr.querySelector(".isv").textContent;
+        if(totalFila>0){
+          if(imp==="Exento"){ ex += totalFila; }
+          else if(imp==="15%"){ const base = totalFila / 1.15; const isv = totalFila - base; g15 += base; i15 += isv; }
+          else if(imp==="18%"){ const base = totalFila / 1.18; const isv = totalFila - base; g18 += base; i18 += isv; }
+        }
+      });
+      const total = ex + g15 + g18 + i15 + i18;
+      document.getElementById("header-total").textContent = "L " + total.toFixed(2);
+    }
+    function parseMoneda(s){ let t=String(s||"").trim().replace(",","."); t=t.replace(/[^0-9.]/g,""); if((t.match(/\./g)||[]).length>1){ const parts=t.split("."); t=parts.slice(0,-1).join("")+"."+parts.slice(-1); } if(t===""||t===".") return 0.0; const f=parseFloat(t); return isNaN(f)?0.0:f; }
+    async function actualizarCorrHeader(){
+      try{ const r = await fetch("/api/pedidos/next"); const j = await r.json(); const el = document.getElementById("header-corr"); el.textContent = j.numero_pedido || "—"; } catch(e){ document.getElementById("header-corr").textContent="—"; }
+    }
+    async function cargarClientes(){
+      try{
+        const resp = await fetch("/api/clientes"); const data = await resp.json();
+        const dlRtn = document.getElementById("rtn-list"); const dlCli = document.getElementById("cliente-list"); dlRtn.innerHTML=""; dlCli.innerHTML="";
+        window._clientesVenta = { byRtn:{}, byNombre:{} };
+        data.forEach(c=>{
+          const optR=document.createElement("option"); optR.value=c.rtn||""; optR.label=c.nombre||""; dlRtn.appendChild(optR);
+          const optC=document.createElement("option"); optC.value=c.nombre||""; optC.label=c.rtn||""; dlCli.appendChild(optC);
+          if(c.rtn) window._clientesVenta.byRtn[c.rtn]=c; if(c.nombre) window._clientesVenta.byNombre[c.nombre]=c;
+        });
+        const rtnInput=document.getElementById("rtn-input"); const cliInput=document.getElementById("cliente-input");
+        rtnInput.addEventListener("change",()=>{ const v=rtnInput.value.trim(); const c=window._clientesVenta.byRtn[v]; if(c && c.nombre) cliInput.value=c.nombre; });
+        cliInput.addEventListener("change",()=>{ const v=cliInput.value.trim(); const c=window._clientesVenta.byNombre[v]; if(c && c.rtn) rtnInput.value=c.rtn; });
+      } catch(e){}
+    }
+    async function handleCodigoInput(input){
+      const q = input.value.trim();
+      if(q.length < 2){ closeSuggestions(); return; }
+      clearTimeout(window._suggTimer || 0);
+      window._suggTimer = setTimeout(async ()=>{
+        try{
+          const resp = await fetch(`/api/productos?q=${encodeURIComponent(q)}`);
+          if(!resp.ok){ closeSuggestions(); return; }
+          const arr = await resp.json();
+          if(Array.isArray(arr) && arr.length>0){
+            renderSuggestions(input, arr.slice(0, 20));
+          } else {
+            closeSuggestions();
+          }
+        } catch(e){ closeSuggestions(); }
+      }, 200);
+    }
+    function renderSuggestions(anchorInput, items){
+      closeSuggestions();
+      const rect = anchorInput.getBoundingClientRect();
+      const box = document.createElement("div");
+      box.style.position = "absolute";
+      box.style.left = `${rect.left + window.scrollX}px`;
+      box.style.top = `${rect.bottom + window.scrollY}px`;
+      box.style.minWidth = `${rect.width}px`;
+      box.style.background = "#fff";
+      box.style.border = "1px solid #3399ff";
+      box.style.borderRadius = "6px";
+      box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+      box.style.zIndex = "9999";
+      box.style.maxHeight = "240px";
+      box.style.overflowY = "auto";
+      suggestionsItems = items;
+      suggestionsAnchorInput = anchorInput;
+      items.forEach(it=>{
+        const row = document.createElement("div");
+        row.style.padding = "8px 10px";
+        row.style.cursor = "pointer";
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.alignItems = "center";
+        const id6 = String(it.id || "").padStart(6, "0");
+        const labelCode = (it.codigo && String(it.codigo).trim() !== "") ? it.codigo : id6;
+        const stk = (it.stock != null ? Number(it.stock) : 0);
+        const stockColor = stk <= 0 ? "#ff4d4f" : "#52c41a";
+        row.innerHTML = `<span>[${labelCode}] ${it.nombre || ""}</span><span style="color:#666;font-size:12px;">${Number(it.precio || 0).toFixed(2)}</span><span style="color:${stockColor};font-size:12px;">Stock: ${stk}</span>`;
+        row.addEventListener("mouseenter", ()=>row.style.background="#e6f7ff");
+        row.addEventListener("mouseleave", ()=>row.style.background="transparent");
+        row.addEventListener("click", async ()=>{
+          anchorInput.value = id6;
+          closeSuggestions();
+          await buscarProducto(anchorInput);
+          const dest = tbody.lastElementChild?.querySelector(".codigo");
+          if(dest) dest.focus();
+        });
+        box.appendChild(row);
+      });
+      document.body.appendChild(box);
+      suggestionsBox = box;
+      suggestionsIndex = -1;
+    }
+    function highlightSuggestion(idx){
+      if(!suggestionsBox) return;
+      const rows = Array.from(suggestionsBox.children);
+      rows.forEach((r,i)=>{ r.style.background = i===idx ? "#ccecff" : "transparent"; });
+      const el = rows[idx];
+      if(el){
+        const top = el.offsetTop;
+        const bottom = top + el.offsetHeight;
+        if(top < suggestionsBox.scrollTop){ suggestionsBox.scrollTop = top; }
+        else if(bottom > suggestionsBox.scrollTop + suggestionsBox.clientHeight){ suggestionsBox.scrollTop = bottom - suggestionsBox.clientHeight; }
+      }
+    }
+    function moveSuggestionSelection(delta){
+      if(!suggestionsBox || !suggestionsItems.length) return;
+      const len = suggestionsItems.length;
+      suggestionsIndex = suggestionsIndex + delta;
+      if(suggestionsIndex < 0) suggestionsIndex = 0;
+      if(suggestionsIndex > len-1) suggestionsIndex = len-1;
+      highlightSuggestion(suggestionsIndex);
+    }
+    function closeSuggestions(){
+      if(suggestionsBox && suggestionsBox.parentNode){ suggestionsBox.parentNode.removeChild(suggestionsBox); }
+      suggestionsBox = null;
+      suggestionsItems = [];
+      suggestionsIndex = -1;
+      suggestionsAnchorInput = null;
+    }
+    async function guardarPedido(){
+      const totalStr = document.getElementById("header-total").textContent; const totalNum = parseFloat(String(totalStr).replace("L","").trim())||0;
+      if(totalNum <= 0){ alert("No hay productos para guardar."); return; }
+      const items = []; const rows = document.querySelectorAll("#tabla-pedido tbody tr");
+      rows.forEach(row=>{
+        const codigo = row.querySelector(".codigo").value; if(!codigo) return;
+        const desc = row.querySelector(".descripcion").textContent;
+        const precio = parseFloat(row.querySelector(".precio").textContent)||0;
+        const cantidad = parseFloat(row.querySelector(".cantidad").value)||0;
+        if(cantidad <= 0) return;
+        const isvText = row.querySelector(".isv").textContent;
+        let id_isv = 3; if(isvText==="15%") id_isv=1; if(isvText==="18%") id_isv=2;
+        items.push({ codigo: codigo, descripcion: desc, precio: precio, cantidad: cantidad, id_isv: id_isv });
+      });
+      if(items.length === 0){ alert("No hay items válidos en el pedido"); return; }
+      const rtnVal = (document.getElementById("rtn-input").value||"").trim();
+      const clienteNombre = (document.getElementById("cliente-input").value||"CONSUMIDOR FINAL").trim() || "CONSUMIDOR FINAL";
+      try{
+        const resp = await fetch("/api/registrar-pedido", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ cliente_rtn: rtnVal, cliente_nombre: clienteNombre, items }) });
+        const data = await resp.json();
+        if(!resp.ok || !data.ok){ alert(data.error || "Error al guardar pedido"); return; }
+        alert("Pedido guardado: " + (data.numero_pedido || data.pedido_id));
+        limpiarTodo();
+      } catch(e){ alert("Error de conexión al guardar pedido"); }
+    }
+    async function cargarPedidoExistente(){
+      const num = (document.getElementById("num-pedido-input") ? document.getElementById("num-pedido-input").value : (_pedidoSeleccionado||"")).trim();
+      if(!num){ alert("Seleccione un pedido"); return; }
+      try{
+        const r = await fetch(`/api/pedidos/${encodeURIComponent(num)}`);
+        const j = await r.json();
+        if(!r.ok){ alert(j.error || "Pedido no encontrado"); return; }
+        document.getElementById("cliente-input").value = j.header.cliente || "";
+        document.getElementById("rtn-input").value = j.header.rtn_cliente || "";
+        document.getElementById("header-corr").textContent = j.header.numero_pedido || "—";
+        document.getElementById("header-estado").textContent = (j.header.estado || "pendiente");
+        tbody.innerHTML = "";
+        for(let idx = 0; idx < j.items.length; idx++){
+          const it = j.items[idx];
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="text-align:center;">${idx+1}</td>
+            <td><input type="text" class="codigo" value="${it.codigo}" onkeydown="checkEnter(event,this)" oninput="handleCodigoInput(this)" onchange="buscarProducto(this)"></td>
+            <td class="descripcion">${it.descripcion}</td>
+            <td><input type="number" class="cantidad" value="${Number(it.cantidad||0).toFixed(2)}" min="0.01" step="0.01" oninput="calcularFila(this.closest('tr'))" onblur="formatearCantidad(this)" style="text-align:center;" placeholder="Cantidad"></td>
+            <td class="precio" style="text-align:right;">${Number(it.precio||0).toFixed(2)}</td>
+            <td class="stock" style="text-align:center;"></td>
+            <td class="total-fila" style="text-align:right;"></td>
+            <td class="isv" style="text-align:center;">${it.id_isv===1?'15%':(it.id_isv===2?'18%':'Exento')}</td>
+            <td style="text-align:center;">
+              <button class="btn-icon" onclick="aumentarCantidadFila(this)"><img src="/iconos/arriba.png" alt="Arriba" style="width:16px;height:16px;"></button>
+              <button class="btn-icon" onclick="reducirCantidadFila(this)"><img src="/iconos/abajo.png" alt="Abajo" style="width:16px;height:16px;"></button>
+              <button class="btn-icon" onclick="borrarFila(this)"><img src="/iconos/eliminar.png" alt="Eliminar" style="width:16px;height:16px;"></button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          calcularFila(tr);
+          try{
+            const rp = await fetch(`/api/producto/${encodeURIComponent(it.codigo)}`);
+            if(rp.ok){
+              const pj = await rp.json();
+              tr.querySelector(".stock").textContent = (pj.stock != null ? Number(pj.stock) : 0);
+            }
+          }catch(e){}
+        }
+        recalcularTotales();
+        try{ agregarFila(); }catch(e){}
+      } catch(e){ alert("Error al cargar pedido"); }
+    }
+    async function guardarCambiosPedido(){
+      const num = (document.getElementById("header-corr").textContent||"").trim();
+      if(!num || num==="—"){ alert("Cargue un pedido primero"); return; }
+      const rows = Array.from(document.querySelectorAll("#tabla-pedido tbody tr"));
+      const items = [];
+      rows.forEach(row=>{
+        const codigo = row.querySelector(".codigo").value.trim(); if(!codigo) return;
+        const desc = row.querySelector(".descripcion").textContent;
+        const precio = parseFloat(row.querySelector(".precio").textContent)||0;
+        const cantidad = parseFloat(row.querySelector(".cantidad").value)||0;
+        if(cantidad <= 0) return;
+        const isvText = row.querySelector(".isv").textContent;
+        let id_isv = 3; if(isvText==="15%") id_isv=1; if(isvText==="18%") id_isv=2;
+        items.push({ codigo: codigo, descripcion: desc, precio: precio, cantidad: cantidad, id_isv: id_isv });
+      });
+      if(items.length===0){ alert("No hay items válidos"); return; }
+      const clienteNombre = (document.getElementById("cliente-input").value||"").trim();
+      const clienteRtn = (document.getElementById("rtn-input").value||"").trim();
+      try{
+        const r = await fetch(`/api/pedidos/${encodeURIComponent(num)}/actualizar`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ cliente_nombre: clienteNombre, cliente_rtn: clienteRtn, items }) });
+        const j = await r.json();
+        if(!r.ok || !j.ok){ alert(j.error || "Error al guardar cambios"); return; }
+        alert("Cambios guardados");
+        limpiarTodo();
+      } catch(e){ alert("Error de conexión"); }
+    }
+    function redirFacturarVentas(){
+      const inp = document.getElementById("num-pedido-input");
+      const num = (((inp ? inp.value : "") || document.getElementById("header-corr").textContent || "")).trim();
+      if(!num || num==="—"){ alert("Ingrese o cargue un número de pedido"); return; }
+      const est = (document.getElementById("header-estado").textContent||"").trim().toLowerCase();
+      if(est==="desactivado" || est==="generado" || est==="cobrado"){ alert("No se puede facturar: pedido desactivado o ya cobrado"); return; }
+      window.location.href = "/ventas?numero_pedido=" + encodeURIComponent(num);
+    }
+    document.addEventListener("click", (e) => {
+      if (suggestionsBox && !suggestionsBox.contains(e.target)) closeSuggestions();
+    });
+    document.addEventListener("DOMContentLoaded", ()=>{ if(tbody && tbody.rows.length===0) agregarFila(); const rb=document.querySelector(".right"); if(rb){ rb.style.display="flex"; rb.style.visibility="visible"; if(window.innerWidth<=1024){ rb.style.position="fixed"; rb.style.left="0"; rb.style.right="0"; rb.style.bottom="0"; rb.style.zIndex="10000"; } } });
+    window.addEventListener("load", ()=>{ if(tbody && tbody.rows.length===0) agregarFila(); cargarClientes(); actualizarCorrHeader(); const rb=document.querySelector(".right"); if(rb){ rb.style.display="flex"; rb.style.visibility="visible"; if(window.innerWidth<=1024){ rb.style.position="fixed"; rb.style.left="0"; rb.style.right="0"; rb.style.bottom="0"; rb.style.zIndex="10000"; } } });
+    function ensureMobileBar(){
+      let bar = document.querySelector(".mobile-actions");
+      const isMobileView = window.innerWidth <= 480;
+      
+      if(!bar){
+        bar = document.createElement("div");
+        bar.className = "mobile-actions collapsed";
+        bar.innerHTML = `
+          <button class="action-btn" onclick="abrirPedidosOverlay()" title="Pedidos"><img src="/iconos/pedidos.png" class="icon" alt="Pedidos"><span>Pedidos</span></button>
+          <button class="action-btn" onclick="redirFacturarVentas()" title="Facturar"><img src="/static/iconos/ventas.svg" class="icon" alt="Facturar"><span>Facturar</span></button>
+          <button class="action-btn" onclick="guardarPedido()" title="Guardar"><img src="/iconos/guardar.png" class="icon" alt="Guardar"><span>Guardar</span></button>
+          <button class="action-btn" onclick="limpiarTabla()" title="Eliminar"><img src="/iconos/eliminar.png" class="icon" alt="Eliminar"><span>Eliminar</span></button>
+          <button class="action-btn" onclick="limpiarTodo()" title="Limpiar"><img src="/iconos/limpiar.png" class="icon" alt="Limpiar"><span>Limpiar</span></button>
+          <button class="action-btn" onclick="guardarCambiosPedido()" title="Guardar cambios"><img src="/iconos/actualizar.png" class="icon" alt="Actualizar"><span>Actualizar</span></button>
+        `;
+        document.body.appendChild(bar);
+      }
+      
+      // En móvil, mover la barra debajo de la tabla (.grid)
+      if(isMobileView){
+        const left = document.querySelector(".left");
+        const grid = document.querySelector(".grid");
+        if(left && grid && bar.parentElement !== left){
+          left.insertBefore(bar, grid.nextSibling);
+        }
+      } else {
+        // En desktop/tablet, volver a body si no está ahí (para position fixed)
+        if(bar.parentElement !== document.body){
+          document.body.appendChild(bar);
+        }
+      }
+
+      let t = document.getElementById("mobile-actions-toggle");
+      if(!t){
+        t = document.createElement("div");
+        t.id = "mobile-actions-toggle";
+        t.className = "mobile-actions-toggle";
+        t.textContent = "Menú";
+        t.onclick = toggleMobileActions;
+        document.body.appendChild(t);
+      } else {
+        if(t.parentElement !== document.body){
+          document.body.appendChild(t);
+        }
+      }
+      
+      if(isMobileView){
+        t.style.display = "none";
+        bar.style.display = "flex";
+        bar.style.visibility = "visible";
+        bar.style.position = "static";
+        bar.style.left = "";
+        bar.style.right = "";
+        bar.style.bottom = "";
+        bar.style.zIndex = "1";
+        bar.style.height = bar.style.height || "50px";
+        bar.style.background = bar.style.background || "#ffffff";
+        bar.style.padding = bar.style.padding || "4px";
+        bar.style.boxSizing = bar.style.boxSizing || "border-box";
+        bar.style.margin = "4px 0";
+        bar.style.border = "1px solid #e0e0e0";
+        bar.style.borderRadius = "6px";
+      } else {
+        t.style.display = bar.classList.contains("expanded") ? "none" : "block";
+        t.style.visibility = "visible";
+        t.style.position = "fixed";
+        t.style.left = "50%";
+        t.style.transform = "translateX(-50%)";
+        t.style.bottom = (window.CSS && CSS.supports("bottom: env(safe-area-inset-bottom)")) ? "calc(env(safe-area-inset-bottom, 0px) + 2px)" : "2px";
+        t.style.zIndex = "2147483647";
+        t.style.background = t.style.background || "#3399ff";
+        t.style.color = t.style.color || "#ffffff";
+        t.style.border = t.style.border || "1px solid #3399ff";
+        t.style.borderRadius = t.style.borderRadius || "16px";
+        t.style.padding = t.style.padding || "1px 12px";
+        t.style.fontSize = t.style.fontSize || "10px";
+        t.style.lineHeight = t.style.lineHeight || "1";
+        t.style.boxShadow = t.style.boxShadow || "0 2px 8px rgba(0,0,0,0.12)";
+        bar.style.display = "flex";
+        bar.style.visibility = "visible";
+        bar.style.position = "fixed";
+        bar.style.left = "0";
+        bar.style.right = "0";
+        bar.style.bottom = (window.CSS && CSS.supports("bottom: env(safe-area-inset-bottom)")) ? "env(safe-area-inset-bottom, 0px)" : "0";
+        bar.style.zIndex = "2147483000";
+        bar.style.height = bar.style.height || "50px";
+        bar.style.background = bar.style.background || "#ffffff";
+        bar.style.padding = bar.style.padding || "4px";
+        bar.style.boxSizing = bar.style.boxSizing || "border-box";
+      }
+      const rightPanel = document.querySelector(".right");
+      if(rightPanel){
+        const isMobile = window.innerWidth <= 1600;
+        rightPanel.style.display = isMobile ? "none" : "flex";
+      }
+    }
+    function toggleMobileActions(){
+      const bar = document.querySelector(".mobile-actions");
+      const t = document.getElementById("mobile-actions-toggle");
+      if(!bar) return;
+      if(bar.classList.contains("collapsed")){
+        bar.classList.remove("collapsed");
+        bar.classList.add("expanded");
+        bar.style.display = "flex";
+        bar.style.visibility = "visible";
+        if(t) t.style.display = "none";
+        if(mobileMenuTimer) { try{ clearTimeout(mobileMenuTimer); }catch(e){} mobileMenuTimer = null; }
+        mobileMenuTimer = setTimeout(()=>{
+          bar.classList.add("collapsed");
+          bar.classList.remove("expanded");
+          bar.style.display = "flex";
+          bar.style.visibility = "visible";
+          if(t){ t.style.display = "block"; }
+        }, 60000);
+      }else{
+        bar.classList.add("collapsed");
+        bar.classList.remove("expanded");
+        bar.style.display = "flex";
+        bar.style.visibility = "visible";
+        if(t) t.style.display = "block";
+        if(mobileMenuTimer) { try{ clearTimeout(mobileMenuTimer); }catch(e){} mobileMenuTimer = null; }
+      }
+    }
+    document.addEventListener("DOMContentLoaded", ensureMobileBar);
+    window.addEventListener("load", ensureMobileBar);
+    window.addEventListener("resize", ensureMobileBar);
+
+    let _pedidoSeleccionado = "";
+    async function cargarPedidosPendientes(){
+      try{
+        const filtroEl = document.getElementById("pedidos-filter");
+        const estadoSel = filtroEl ? filtroEl.value : "pendiente";
+        let url = `/api/pedidos?limit=50`;
+        if(estadoSel){ url += `&estado=${encodeURIComponent(estadoSel)}`; }
+        const resp = await fetch(url);
+        const arr = await resp.json();
+        const ov = document.getElementById("pedidos-overlay");
+        if(ov && ov.style.display==="flex" && Array.isArray(arr)){
+          renderPedidosList(arr);
+        }
+      } catch(e){}
+    }
+    function refrescarPedidosPendientes(){ cargarPedidosPendientes(); }
+    function abrirPedidosOverlay(){
+      const ov = document.getElementById("pedidos-overlay");
+      ov.style.display = "flex";
+      _pedidoSeleccionado = "";
+      document.getElementById("pedidos-search").value = "";
+      renderPedidosList([]);
+      cargarPedidosPendientes();
+      setTimeout(()=>document.getElementById("pedidos-search").focus(), 10);
+    }
+    function cerrarPedidosOverlay(){
+      const ov = document.getElementById("pedidos-overlay");
+      ov.style.display = "none";
+    }
+    function renderPedidosList(arr){
+      const tb = document.getElementById("pedidos-list-body");
+      tb.innerHTML = "";
+      arr.forEach(p=>{
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.dataset.numero = p.numero_pedido || "";
+        const total = Number(p.total||0).toFixed(2);
+        tr.innerHTML = `
+          <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.numero_pedido || ""}</td>
+          <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.cliente || ""}</td>
+          <td style="padding:6px; border-bottom:1px solid #f0f6ff; text-align:right;">L ${total}</td>
+          <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.fecha || ""}</td>
+        `;
+        tr.addEventListener("click", ()=>{
+          _pedidoSeleccionado = tr.dataset.numero;
+          Array.from(tb.children).forEach(r=>r.style.background="");
+          tr.style.background = "#e6f7ff";
+        });
+        tr.addEventListener("dblclick", ()=>{
+          const num = tr.dataset.numero;
+          if(num){
+            cargarPedidoExistente();
+            cerrarPedidosOverlay();
+          }
+        });
+        tb.appendChild(tr);
+      });
+    }
+    async function buscarPedidosPendientes(){
+      const q = (document.getElementById("pedidos-search").value||"").trim();
+      try{
+        const filtroEl = document.getElementById("pedidos-filter");
+        const estadoSel = filtroEl ? filtroEl.value : "pendiente";
+        let url = `/api/pedidos?limit=50`;
+        if(estadoSel){ url += `&estado=${encodeURIComponent(estadoSel)}`; }
+        if(q){ url += `&q=${encodeURIComponent(q)}`; }
+        const resp = await fetch(url);
+        const arr = await resp.json();
+        if(Array.isArray(arr)) renderPedidosList(arr);
+      } catch(e){}
+    }
+    function cargarPedidoSeleccionadoOverlay(){
+      const num = _pedidoSeleccionado || (document.querySelector("#pedidos-list-body tr")?.dataset?.numero || "");
+      if(!num){ alert("Seleccione un pedido"); return; }
+      cargarPedidoExistente();
+      cerrarPedidosOverlay();
+    }
+    async function cambiarEstadoPedido(nuevo){
+      const num = (document.getElementById("header-corr").textContent||"").trim();
+      if(!num || num==="—"){ alert("Cargue un pedido primero"); return; }
+      try{
+        const resp = await fetch(`/api/pedidos/${encodeURIComponent(num)}/estado`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ estado: nuevo }) });
+        const j = await resp.json();
+        if(!resp.ok || !j.ok){ alert(j.error || "Error al cambiar estado"); return; }
+        document.getElementById("header-estado").textContent = j.estado || nuevo;
+        refrescarPedidosPendientes();
+      } catch(e){ alert("Error de conexión"); }
+    }
+    function desactivarPedido(){ cambiarEstadoPedido("desactivado"); }
+    function reactivarPedido(){ cambiarEstadoPedido("pendiente"); }
+    async function cambiarEstadoPedidoSeleccionado(nuevo){
+      const num = _pedidoSeleccionado || (document.querySelector("#pedidos-list-body tr")?.dataset?.numero || "");
+      if(!num){ alert("Seleccione un pedido"); return; }
+      try{
+        const resp = await fetch(`/api/pedidos/${encodeURIComponent(num)}/estado`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ estado: nuevo }) });
+        const j = await resp.json();
+        if(!resp.ok || !j.ok){ alert(j.error || "Error al cambiar estado"); return; }
+        refrescarPedidosPendientes();
+      } catch(e){ alert("Error de conexión"); }
+    }
+    function desactivarPedidoOverlay(){ cambiarEstadoPedidoSeleccionado("desactivado"); }
+    function reactivarPedidoOverlay(){ cambiarEstadoPedidoSeleccionado("pendiente"); }
+  </script>
+</body>
+</html>

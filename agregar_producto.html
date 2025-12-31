@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producto - Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        #nombre { text-transform: capitalize; }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .barcode-input {
+            position: relative;
+        }
+        .barcode-input input {
+            padding-right: 50px;
+        }
+        .scan-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .scan-icon:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .info-box.show {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+        .info-box.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .info-box.error {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .info-box h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .info-box p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .btn {
+            width: auto;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .input-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .quick-isv {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .quick-isv button {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-isv button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .container { border-radius: 8px; }
+            .header { padding: 15px; }
+            .header h1 { font-size: 20px; }
+            .content { padding: 15px; }
+            .form-group { margin-bottom: 15px; }
+            input, select, .btn { padding: 10px; font-size: 14px; }
+            label { font-size: 13px; margin-bottom: 5px; }
+            #btnNuevaCategoria { width: 32px; height: 38px; }
+            .barcode-input input { padding-right: 40px; }
+            .scan-icon { font-size: 20px; right: 10px; }
+        }
+    </style>
+</head>
+<body data-modo="{{ modo or 'agregar' }}" data-product-id="{{ producto.id if producto else '' }}" data-product-cat-id="{{ producto.id_categoria if producto else '' }}">
+    <div class="container">
+        <div class="header">
+            <h1>📦 Agregar Producto</h1>
+            <p>Escanea el código de barras o ingresa manualmente</p>
+        </div>
+        
+        <div class="content">
+            <div class="actions" style="margin-bottom:12px; display:flex; gap:10px;">
+                <button type="button" id="btnBackCatalog" class="btn btn-secondary" style="padding:10px 12px;">← Volver a Productos</button>
+            </div>
+            <div id="infoBox" class="info-box"></div>
+            
+            <form id="productoForm">
+                <div class="form-group">
+                    <label for="codigoBarras">Código de Barras</label>
+                    <div class="barcode-input">
+                        <input 
+                            type="text" 
+                            id="codigoBarras" 
+                            placeholder="Escanea o ingresa código"
+                            value="{{ (producto.codigo if producto else request.args.get('codigo')) or '' }}"
+                            autofocus
+                        >
+                        <span class="scan-icon">📷</span>
+                    </div>
+                    <div class="input-hint">El cursor debe estar aquí para escanear</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="nombre">Nombre del Producto *</label>
+                    <input 
+                        type="text" 
+                        id="nombre" 
+                        placeholder="Nombre del producto"
+                        value="{{ (producto.nombre if producto else request.args.get('nombre')) or '' }}"
+                        required
+                    >
+                    <div class="input-hint">Busca primero en MySQL y luego en CSV</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoria">Categoría</label>
+                    <div style="display:flex; gap:8px; align-items:stretch;">
+                        <select id="categoria" style="flex:1;">
+                            <option value="">Selecciona una categoría</option>
+                        </select>
+                        <button type="button" id="btnNuevaCategoria" class="btn btn-secondary" title="Nueva categoría" style="padding:0; width:32px; font-size:20px; height:40px; align-self:stretch; display:flex; align-items:center; justify-content:center;">+</button>
+                    </div>
+                    <div class="input-hint">Usa categorías para organizar tus productos</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="precio">Precio de Venta (Lps) *</label>
+                    <input 
+                        type="number" 
+                        id="precio" 
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0.01"
+                        value="{{ (producto.precio if producto else '') or '' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="impuesto">Impuesto (ISV)</label>
+                    <select id="impuesto">
+                        <option value="3" {{ 'selected' if (producto and producto.id_isv == 3) else '' }}>Exento</option>
+                        <option value="1" {{ 'selected' if ((producto and producto.id_isv == 1) or (not producto)) else '' }}>15%</option>
+                        <option value="2" {{ 'selected' if (producto and producto.id_isv == 2) else '' }}>18%</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="stock">Stock Inicial</label>
+                    <input 
+                        type="number" 
+                        id="stock" 
+                        value="{{ (producto.stock if producto else 100) }}"
+                        min="0"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="pesable">Pesable</label>
+                    <select id="pesable">
+                        <option value="0" {{ 'selected' if ((producto and (not producto.pesable)) or (not producto)) else '' }}>No</option>
+                        <option value="1" {{ 'selected' if (producto and producto.pesable) else '' }}>Sí</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btnGuardar">
+                    {{ 'Guardar Cambios' if modo == 'editar' else 'Guardar Producto' }}
+                </button>
+                
+                <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">
+                    Limpiar y Agregar Otro
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="scanner-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:500px; position:relative; display:flex; flex-direction:column; align-items:center;">
+            <button type="button" id="btn-close-scanner" style="position:absolute; top:10px; right:10px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+            <h3 style="margin-bottom:15px; text-align:center;">Escanear Código</h3>
+            <div id="reader" style="width:100%;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mapeo simple para ISV select
+        const selImpuesto = document.getElementById('impuesto');
+        const modo = document.body.dataset.modo || 'agregar';
+        const productoId = document.body.dataset.productId ? Number(document.body.dataset.productId) : null;
+        function toTitleCase(s) {
+            return String(s || "")
+              .toLowerCase()
+              .replace(/(^|\s)\S/g, ch => ch.toUpperCase());
+        }
+
+        // Enviar formulario
+        document.getElementById('productoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btnGuardar = document.getElementById('btnGuardar');
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<span class="loading"></span> Guardando...';
+            
+            const datos = {
+                codigo_barras: document.getElementById('codigoBarras').value.trim(),
+                nombre: toTitleCase(document.getElementById('nombre').value.trim()),
+                precio: parseFloat(document.getElementById('precio').value),
+                id_isv: parseInt(selImpuesto.value),
+                stock: parseInt(document.getElementById('stock').value),
+                pesable: parseInt(document.getElementById('pesable').value),
+                id_categoria: (function(){
+                    const v = document.getElementById('categoria').value;
+                    return v ? parseInt(v) : null;
+                })()
+            };
+            
+            try {
+                const url = (modo === 'editar' && productoId) ? `/api/productos/${productoId}` : '/api/productos';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        barra: datos.codigo_barras,
+                        nombre: datos.nombre,
+                        precio: datos.precio,
+                        id_isv: datos.id_isv,
+                        stock: datos.stock,
+                        id_categoria: datos.id_categoria
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    window.location.href = '/productos';
+                } else {
+                    mostrarInfo(`✗ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                mostrarInfo('✗ Error al guardar el producto', 'error');
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = 'Guardar Producto';
+            }
+        });
+
+        function mostrarInfo(mensaje, tipo) {
+            const infoBox = document.getElementById('infoBox');
+            infoBox.innerHTML = mensaje;
+            infoBox.className = `info-box show ${tipo}`;
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('productoForm').reset();
+            selImpuesto.value = '1';
+            document.getElementById('infoBox').className = 'info-box';
+            document.getElementById('codigoBarras').focus();
+        }
+
+        async function buscarCodigo(codigo) {
+            const c = String(codigo || "").trim();
+            if (!c) return;
+            try {
+                const r = await fetch(`/api/producto/${encodeURIComponent(c)}`);
+                if (r.ok) {
+                    window.location.href = `/editar-producto?codigo=${encodeURIComponent(c)}`;
+                    return;
+                }
+            } catch (e) {}
+            try {
+                const r2 = await fetch(`/api/producto-csv/${encodeURIComponent(c)}`);
+                if (r2.ok) {
+                    const data = await r2.json();
+                    document.getElementById('codigoBarras').value = data.codigo || c;
+                    if (data.nombre) document.getElementById('nombre').value = toTitleCase(data.nombre);
+                    if (typeof data.precio === "number") document.getElementById('precio').value = String(data.precio);
+                    if (typeof data.id_isv === "number") selImpuesto.value = String(data.id_isv);
+                    if (typeof data.stock === "number") document.getElementById('stock').value = String(data.stock);
+                    if (typeof data.pesable === "number") document.getElementById('pesable').value = String(data.pesable);
+                    mostrarInfo('✓ Encontrado en CSV. Completa los datos y guarda.', 'success');
+                    return;
+                }
+            } catch (e) {}
+            alert('Producto no encontrado');
+            mostrarInfo('⚠ Producto no encontrado. Ingresa los datos y guarda.', 'info');
+            try {
+                const inp = document.getElementById('codigoBarras');
+                inp.focus();
+                inp.select();
+            } catch (e) {}
+        }
+
+        // Enfocar el campo de código al cargar
+        window.addEventListener('load', () => {
+            // Cargar categorías
+            (async () => {
+                try {
+                    const res = await fetch('/api/categorias');
+                    const cats = await res.json();
+                    const sel = document.getElementById('categoria');
+                    sel.innerHTML = '<option value=\"\">Selecciona una categoría</option>';
+                    cats.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.nombre;
+                        sel.appendChild(opt);
+                    });
+                    // Preseleccionar si estamos en modo edición y el producto tiene categoría
+                    try {
+                        const pidCat = document.body.dataset.productCatId ? parseInt(document.body.dataset.productCatId) : null;
+                        if (pidCat) sel.value = pidCat;
+                    } catch (e) {}
+                    // Preseleccionar si viene desde Productos con ?categoria_id
+                    try {
+                        const params = new URLSearchParams(window.location.search);
+                        const catParam = params.get('categoria_id');
+                        if (catParam) sel.value = parseInt(catParam);
+                    } catch (e) {}
+                } catch (e) {}
+            })();
+            document.getElementById('btnNuevaCategoria').addEventListener('click', async () => {
+                const nombre = prompt('Nombre de la nueva categoría:');
+                if (!nombre || !String(nombre).trim()) return;
+                try {
+                    const r = await fetch('/api/categorias', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: String(nombre).trim() })
+                    });
+                    const data = await r.json();
+                    if (!r.ok) {
+                        mostrarInfo('✗ ' + (data.error || 'Error al crear categoría'), 'error');
+                        return;
+                    }
+                    const sel = document.getElementById('categoria');
+                    const opt = document.createElement('option');
+                    opt.value = data.id;
+                    opt.textContent = data.nombre;
+                    sel.appendChild(opt);
+                    sel.value = data.id;
+                    mostrarInfo('✓ Categoría creada', 'success');
+                } catch (e) {
+                    mostrarInfo('✗ Error al crear categoría', 'error');
+                }
+            });
+            const params = new URLSearchParams(window.location.search);
+            const codigo = params.get('codigo');
+            const nombre = params.get('nombre');
+            const msg = params.get('msg');
+            const nuevaCat = params.get('nueva_categoria_id');
+            document.getElementById('btnBackCatalog').addEventListener('click', () => {
+                window.location.href = '/productos';
+            });
+            document.getElementById('codigoBarras').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarCodigo(document.getElementById('codigoBarras').value);
+                }
+            });
+            window.addEventListener('keydown', (e) => {
+                const k = String(e.key || "");
+                const isSave = (e.ctrlKey && k.toLowerCase() === 's') || (e.altKey && k.toLowerCase() === 'g') || (k === 'F2');
+                if (isSave) {
+                    e.preventDefault();
+                    const form = document.getElementById('productoForm');
+                    if (form) {
+                        if (typeof form.requestSubmit === 'function') {
+                            form.requestSubmit();
+                        } else {
+                            form.dispatchEvent(new Event('submit', { cancelable: true }));
+                        }
+                    }
+                }
+            });
+            if (nuevaCat) {
+                try {
+                    const sel = document.getElementById('categoria');
+                    sel.value = parseInt(nuevaCat);
+                } catch (e) {}
+            }
+            if (codigo) {
+                document.getElementById('codigoBarras').value = codigo;
+            }
+            if (nombre) {
+                document.getElementById('nombre').value = nombre;
+            }
+            if (msg === 'found_csv') {
+                mostrarInfo('✓ Encontrado en CSV. Completa los datos y guarda.', 'success');
+            } else if (msg === 'not_found') {
+                mostrarInfo('⚠ Producto no encontrado. Ingresa los datos y guarda.', 'info');
+            }
+            if (!codigo && !nombre) {
+                document.getElementById('codigoBarras').focus();
+            }
+        });
+
+        // Scanner logic
+        const scannerModal = document.getElementById('scanner-modal');
+        const btnCloseScanner = document.getElementById('btn-close-scanner');
+        let html5QrcodeScanner = null;
+
+        document.querySelector('.scan-icon').addEventListener('click', () => {
+            scannerModal.style.display = 'flex';
+            startScanner();
+        });
+
+        btnCloseScanner.addEventListener('click', () => {
+            stopScanner();
+            scannerModal.style.display = 'none';
+        });
+
+        function startScanner() {
+            if (html5QrcodeScanner) return;
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(err => {
+                 console.error("Error starting scanner", err);
+                 alert("No se pudo iniciar la cámara: " + err);
+                 scannerModal.style.display = 'none';
+                 html5QrcodeScanner = null;
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('codigoBarras').value = decodedText;
+            stopScanner();
+            scannerModal.style.display = 'none';
+            buscarCodigo(decodedText);
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }).catch(err => console.log("Stop failed", err));
+            }
+        }
+    </script>
+</body>
+</html>

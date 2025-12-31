@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f7f7fb; padding: 12px; }
+    .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .header h1 { font-size: 20px; }
+    .content { padding: 16px; }
+    .grid { display:grid; grid-template-columns: 360px 1fr; gap: 16px; }
+    .card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display:block; margin-bottom:6px; font-weight:600; color:#333; }
+    .form-group input, .form-group select { width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px; }
+    .form-actions { display:flex; gap:8px; }
+    .btn { padding:10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-primary { background:#667eea; color:#fff; }
+    .btn-secondary { background:#f0f0f8; color:#333; }
+    .btn-danger { background:#dc3545; color:#fff; }
+    .table-wrap { border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; }
+    table { width:100%; border-collapse: collapse; }
+    thead th { background:#fafafa; text-align:left; padding:10px; font-size:14px; border-bottom:1px solid #e0e0e0; }
+    tbody td { padding:10px; font-size:14px; border-bottom:1px solid #f0f0f0; }
+    .status-active { color:#256d1b; background:#e8f5e9; padding:4px 8px; border-radius:999px; font-size:12px; display:inline-block; }
+    .status-inactive { color:#a40000; background:#ffe5e5; padding:4px 8px; border-radius:999px; font-size:12px; display:inline-block; }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      .header { padding: 10px 14px; }
+      .header h1 { font-size: 18px; }
+      .content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>👥 Gestión de Usuarios</h1>
+      <button class="btn btn-secondary" onclick="reloadList()">Recargar</button>
+    </div>
+    <div class="content">
+      <div class="grid">
+        <div class="card">
+          <h3 id="form-title">Agregar Usuario</h3>
+          <div class="form-group">
+            <label>Usuario</label>
+            <input id="f-usuario" placeholder="usuario" />
+          </div>
+          <div class="form-group">
+            <label>Nombre</label>
+            <input id="f-nombre" placeholder="Nombre completo" />
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input id="f-contrasena" type="password" placeholder="Contraseña" />
+          </div>
+          <div class="form-group">
+            <label>Rol</label>
+            <select id="f-rol">
+              <option value="admin">Admin</option>
+              <option value="cajero" selected>Cajero</option>
+              <option value="mesero">Mesero</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="f-activo">
+              <option value="1" selected>Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-save">Guardar</button>
+            <button class="btn btn-secondary" id="btn-clear">Limpiar</button>
+          </div>
+          <p id="msg" style="margin-top:8px; font-size:13px; color:#666;"></p>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table id="tabla">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="text-align:center; color:#666;">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let editUser = null;
+
+    function setMsg(t) {
+      const m = document.getElementById("msg");
+      m.textContent = t || "";
+    }
+    async function reloadList() {
+      try {
+        const r = await fetch("/api/usuarios");
+        const data = await r.json();
+        const tbody = document.querySelector("#tabla tbody");
+        tbody.innerHTML = "";
+        data.forEach(u => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.usuario}</td>
+            <td>${u.nombre}</td>
+            <td>${u.rol}</td>
+            <td>${u.activo ? '<span class="status-active">Activo</span>' : '<span class="status-inactive">Inactivo</span>'}</td>
+            <td style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" title="Editar" onclick="edit('${u.usuario}', '${encodeURIComponent(u.nombre)}', '${u.rol}', ${u.activo})">Editar</button>
+              ${u.activo ? `<button class="btn btn-secondary" title="Inactivar" onclick="inactivar('${u.usuario}')">Inactivar</button>` : `<button class="btn btn-secondary" title="Activar" onclick="activar('${u.usuario}')">Activar</button>`}
+              <button class="btn btn-danger" title="Eliminar" onclick="eliminar('${u.usuario}')">Eliminar</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        setMsg("Error al cargar usuarios");
+      }
+    }
+    function edit(usuario, nombreEnc, rol, activo) {
+      editUser = usuario;
+      document.getElementById("form-title").textContent = "Editar Usuario";
+      document.getElementById("f-usuario").value = usuario;
+      document.getElementById("f-usuario").disabled = true;
+      document.getElementById("f-nombre").value = decodeURIComponent(nombreEnc);
+      document.getElementById("f-contrasena").value = "";
+      document.getElementById("f-rol").value = rol;
+      document.getElementById("f-activo").value = String(activo ? 1 : 0);
+    }
+    function clearForm() {
+      editUser = null;
+      document.getElementById("form-title").textContent = "Agregar Usuario";
+      document.getElementById("f-usuario").disabled = false;
+      document.getElementById("f-usuario").value = "";
+      document.getElementById("f-nombre").value = "";
+      document.getElementById("f-contrasena").value = "";
+      document.getElementById("f-rol").value = "cajero";
+      document.getElementById("f-activo").value = "1";
+      setMsg("");
+    }
+    async function guardar() {
+      const usuario = document.getElementById("f-usuario").value.trim();
+      const nombre = document.getElementById("f-nombre").value.trim();
+      const contrasena = document.getElementById("f-contrasena").value;
+      const rol = document.getElementById("f-rol").value;
+      const activo = parseInt(document.getElementById("f-activo").value, 10);
+      if (!usuario || !nombre || (!editUser && !contrasena)) {
+        setMsg("Complete Usuario, Nombre y Contraseña");
+        return;
+      }
+      try {
+        if (editUser) {
+          const payload = { nombre, rol, activo };
+          if (contrasena) payload.contrasena = contrasena;
+          const r = await fetch("/api/usuarios/" + encodeURIComponent(editUser), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          const d = await r.json();
+          if (r.ok && d.ok) { setMsg("Actualizado"); reloadList(); clearForm(); } else { setMsg(d.error || "Error al actualizar"); }
+        } else {
+          const r = await fetch("/api/usuarios", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario, nombre, contrasena, rol, activo }) });
+          const d = await r.json();
+          if (r.ok && d.ok) { setMsg("Creado"); reloadList(); clearForm(); } else { setMsg(d.error || "Error al crear"); }
+        }
+      } catch (e) {
+        setMsg("Error de conexión");
+      }
+    }
+    async function activar(usuario) {
+      try {
+        const r = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/activar`, { method: "POST" });
+        const d = await r.json();
+        if (r.ok && d.ok) { reloadList(); } else { setMsg(d.error || "Error al activar"); }
+      } catch (e) { setMsg("Error de conexión"); }
+    }
+    async function inactivar(usuario) {
+      try {
+        const r = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/inactivar`, { method: "POST" });
+        const d = await r.json();
+        if (r.ok && d.ok) { reloadList(); } else { setMsg(d.error || "Error al inactivar"); }
+      } catch (e) { setMsg("Error de conexión"); }
+    }
+    async function eliminar(usuario) {
+      if (!confirm("¿Eliminar usuario?")) return;
+      try {
+        const r = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, { method: "DELETE" });
+        const d = await r.json();
+        if (r.ok && d.ok) { reloadList(); } else { setMsg(d.error || "Error al eliminar"); }
+      } catch (e) { setMsg("Error de conexión"); }
+    }
+    document.getElementById("btn-save").addEventListener("click", guardar);
+    document.getElementById("btn-clear").addEventListener("click", clearForm);
+    window.addEventListener("load", reloadList);
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión CAI - Ventas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container { max-width: 1040px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-save { background: #28a745; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; line-height: 1.2; }
+        .btn-back { background: #6c757d; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 0.85rem; line-height: 1.2; }
+        .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; padding:0; border-radius:4px; font-size:16px; }
+        .icon-green { background:#28a745; color:#fff; }
+        .icon-blue { background:#0078d7; color:#fff; }
+        .icon-gray { background:#6c757d; color:#fff; }
+        .icon-orange { background:#f0ad4e; color:#fff; }
+        .icon-red { background:#dc3545; color:#fff; }
+        .alert { padding: 10px; margin-bottom: 20px; border-radius: 4px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        .history-table th, .history-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .history-table th { background: #f8f9fa; }
+        .history-table .icon-btn { width:20px; height:20px; font-size:12px; }
+        .history-table th:nth-child(8), .history-table td:nth-child(8) { width: 180px; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de CAI y Facturación</h1>
+        {% if msg %}
+        <div id="alert" class="alert alert-{{ msg_type if msg_type else 'success' }}">{{ msg }}</div>
+        {% else %}
+        <div id="alert" class="alert" style="display:none"></div>
+        {% endif %}
+
+        <form method="POST" action="/configuracion/cai">
+            <div class="form-group">
+                <label>Tipo de Facturación</label>
+                <select name="tipo" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" onchange="window.location.href='?tipo='+this.value">
+                    <option value="G" {% if tipo_seleccionado == 'G' %}selected{% endif %}>General</option>
+                    <option value="E" {% if tipo_seleccionado == 'E' %}selected{% endif %}>Exenta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Número CAI</label>
+                <input type="text" name="cai" value="{{ actual.cai if actual else '' }}" required placeholder="Eje: 324234-324234-324234-324234-324234-32">
+            </div>
+            <div class="form-group">
+                <label>Fecha Solicitud</label>
+                <input type="date" name="fecha_solicitud" value="{{ actual.fecha_solicitud if actual and actual.fecha_solicitud else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label>Fecha Límite de Emisión</label>
+                <input type="date" name="fecha_limite" value="{{ actual.fecha_limite if actual and actual.fecha_limite else (actual.f_limite if actual and actual.f_limite else '') }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Rango Inicial</label>
+                <input type="text" name="rango_inicial" value="{{ actual.rango_inicial if actual and actual.rango_inicial else (actual.rango_i if actual and actual.rango_i else '') }}" required placeholder="00000001">
+            </div>
+            
+            <div class="form-group">
+                <label>Rango Final</label>
+                <input type="text" name="rango_final" value="{{ actual.rango_final if actual and actual.rango_final else (actual.rango_f if actual and actual.rango_f else '') }}" required placeholder="00000100">
+            </div>
+
+            <div class="form-group">
+                <label>Establecimiento</label>
+                <input type="text" name="establecimiento" inputmode="numeric" pattern="\d{3}" maxlength="3" title="3 dígitos, ej: 002" value="{{ '%03d' % (actual.establecimiento) if actual and actual.establecimiento is not none else '' }}" placeholder="002">
+            </div>
+            <div class="form-group">
+                <label>Punto de Emisión</label>
+                <input type="text" name="punto_emision" inputmode="numeric" pattern="\d{3}" maxlength="3" title="3 dígitos, ej: 006" value="{{ '%03d' % (actual.punto_emision) if actual and actual.punto_emision is not none else '' }}" placeholder="006">
+            </div>
+            <div class="form-group">
+                <label>Tipo Documento</label>
+                <input type="text" name="tipo_doc" inputmode="numeric" pattern="\d{2}" maxlength="2" title="2 dígitos, ej: 01" value="{{ '%02d' % (actual.tipo_doc) if actual and actual.tipo_doc is not none else '' }}" placeholder="01">
+            </div>
+            <div class="form-group">
+                <label>Número Documento Actual</label>
+                <input type="text" name="numero_documento" inputmode="numeric" pattern="\d{8}" maxlength="8" title="8 dígitos, ej: 00246001" value="{{ '%08d' % (actual.numero_documento) if actual and actual.numero_documento is not none else '' }}" placeholder="00000001">
+            </div>
+
+            <button type="submit" class="icon-btn icon-green" title="Guardar">💾</button>
+            <button type="button" class="icon-btn icon-blue" style="margin-left:10px;" title="Importar PDF" onclick="document.getElementById('importFile').click()">⤴️</button>
+            <a href="/dashboard" class="icon-btn icon-gray" style="margin-left:10px;" title="Inicio">⬅️</a>
+            <script>
+            document.querySelector('form:not(#importForm)').addEventListener('submit', function(e) {
+                console.log('Form data:', new FormData(this));
+            });
+            </script>
+        </form>
+        <form id="importForm" method="POST" action="/configuracion/cai/importar-pdf?tipo={{ tipo_seleccionado }}" enctype="multipart/form-data" style="margin-top: 10px;">
+            <input type="hidden" name="tipo" value="{{ tipo_seleccionado }}">
+            <input type="file" id="importFile" name="archivo" accept="application/pdf" style="display:none">
+        </form>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var fileInput = document.getElementById('importFile');
+            var formImport = document.getElementById('importForm');
+            if (fileInput && formImport) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        formImport.submit();
+                    }
+                });
+            }
+            var saveForm = document.querySelector('form:not(#importForm)');
+            var alertBox = document.getElementById('alert');
+            if (saveForm && alertBox) {
+                saveForm.addEventListener('submit', function() {
+                    alertBox.textContent = 'Guardando...';
+                    alertBox.className = 'alert alert-success';
+                    alertBox.style.display = 'block';
+                    var btn = saveForm.querySelector('button[type="submit"]');
+                    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+                });
+            }
+        });
+        </script>
+
+        <h3>Historial de Configuraciones</h3>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>CAI</th>
+                    <th>Vence</th>
+                    <th>Est-Pem-Tip</th>
+                    <th>N° Doc</th>
+                    <th>Rango</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in historial %}
+                <tr>
+                    <td>{{ 'Exenta' if h.tipo == 'E' else 'General' }}</td>
+                    <td>{{ h.cai }}</td>
+                    <td>{{ h.f_limite }}</td>
+                    <td>{{ "%03d-%03d-%02d" % ((h.establecimiento or 0), (h.punto_emision or 0), (h.tipo_doc or 1)) }}</td>
+                    <td>{{ "%08d" % (h.numero_documento or 0) }}</td>
+                    <td>{{ "%08d" % (h.rango_i or 0) }} - {{ "%08d" % (h.rango_f or 0) }}</td>
+                    <td>{{ 'Activo' if h.activo == 1 else 'Inactivo' }}</td>
+                    <td>
+                        <form method="POST" action="/configuracion/cai/activar" style="display:inline;">
+                            <input type="hidden" name="tipo" value="{{ h.tipo }}">
+                            <input type="hidden" name="cai" value="{{ h.cai }}">
+                            <input type="hidden" name="establecimiento" value="{{ h.establecimiento }}">
+                            <input type="hidden" name="punto_emision" value="{{ h.punto_emision }}">
+                            <input type="hidden" name="tipo_doc" value="{{ h.tipo_doc }}">
+                            <input type="hidden" name="numero_documento" value="{{ h.numero_documento }}">
+                            <button type="submit" class="icon-btn icon-green" title="Activar">▶️</button>
+                        </form>
+                        <form method="POST" action="/configuracion/cai/inactivar" style="display:inline;">
+                            <input type="hidden" name="tipo" value="{{ h.tipo }}">
+                            <input type="hidden" name="cai" value="{{ h.cai }}">
+                            <input type="hidden" name="establecimiento" value="{{ h.establecimiento }}">
+                            <input type="hidden" name="punto_emision" value="{{ h.punto_emision }}">
+                            <input type="hidden" name="tipo_doc" value="{{ h.tipo_doc }}">
+                            <input type="hidden" name="numero_documento" value="{{ h.numero_documento }}">
+                            <button type="submit" class="icon-btn icon-orange" title="Inactivar">⏸️</button>
+                        </form>
+                        <form method="POST" action="/configuracion/cai/eliminar" style="display:inline; margin-left:8px;">
+                            <input type="hidden" name="tipo" value="{{ h.tipo }}">
+                            <input type="hidden" name="cai" value="{{ h.cai }}">
+                            <input type="hidden" name="establecimiento" value="{{ h.establecimiento }}">
+                            <input type="hidden" name="punto_emision" value="{{ h.punto_emision }}">
+                            <input type="hidden" name="tipo_doc" value="{{ h.tipo_doc }}">
+                            <input type="hidden" name="numero_documento" value="{{ h.numero_documento }}">
+                            <button type="submit" class="icon-btn icon-red" title="Eliminar">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

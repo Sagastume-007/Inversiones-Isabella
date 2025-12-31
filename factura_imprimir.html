@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura #{{ factura.id }}</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Fuente tipo ticket */
+            font-size: 12px;
+            max-width: 300px; /* Ancho típico de impresora térmica (80mm aprox 300px) */
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #fff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 2px 0;
+        }
+        
+        .info-factura {
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 5px 0;
+            margin-bottom: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        
+        th {
+            text-align: left;
+            border-bottom: 1px solid #000;
+            font-size: 11px;
+        }
+        
+        td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+        
+        .col-cant { width: 15%; text-align: center; }
+        .col-desc { width: 55%; }
+        .col-precio { width: 30%; text-align: right; }
+        
+        .totales {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+        
+        .gran-total {
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 20px;
+        }
+        
+        .no-print {
+            margin-top: 20px;
+            text-align: center;
+            border-top: 2px solid #ccc;
+            padding-top: 10px;
+        }
+        
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>{{ cia.nombre_cia or 'NOMBRE DE LA EMPRESA' }}</h2>
+        {% if cia.direccion1 %}<p>{{ cia.direccion1 }}</p>{% endif %}
+        {% if cia.direccion2 %}<p>{{ cia.direccion2 }}</p>{% endif %}
+        {% if cia.rtn_cia %}<p>RTN: {{ cia.rtn_cia }}</p>{% endif %}
+        {% if cia.telefono %}<p>Tel: {{ cia.telefono }}</p>{% endif %}
+        {% if cia.correo %}<p>{{ cia.correo }}</p>{% endif %}
+        
+        {% if cai %}
+        <div style="margin-top: 5px; font-size: 10px;">
+            <p><strong>CAI:</strong> {{ cai.cai }}</p>
+            <p>Rango: {{ cai.rango_inicial }} al {{ cai.rango_final }}</p>
+            <p>Fecha Límite: {{ cai.fecha_limite }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="info-factura">
+        <div class="info-row">
+            <span>Factura #:</span>
+            <span>000-001-01-{{ '%08d' % factura.id }}</span>
+        </div>
+        <div class="info-row">
+            <span>Fecha:</span>
+            <span>{{ factura.fecha }}</span>
+        </div>
+        <div class="info-row">
+            <span>Cliente:</span>
+            <span>{{ factura.cliente }}</span>
+        </div>
+        <div class="info-row">
+            <span>RTN:</span>
+            <span>_________________</span>
+        </div>
+        <div class="info-row">
+            <span>Cajero:</span>
+            <span>Admin</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-cant">Cant</th>
+                <th class="col-desc">Desc</th>
+                <th class="col-precio">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in detalles %}
+            <tr>
+                <td class="col-cant">{{ item.cantidad }}</td>
+                <td class="col-desc">{{ item.nombre_producto }}</td>
+                <td class="col-precio">L {{ "%.2f"|format(item.subtotal) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totales">
+        {% if factura.exento > 0 %}
+        <div class="total-row">
+            <span>Exento:</span>
+            <span>L {{ "%.2f"|format(factura.exento) }}</span>
+        </div>
+        {% endif %}
+        
+        {% if factura.gravado15 > 0 %}
+        <div class="total-row">
+            <span>Gravado 15%:</span>
+            <span>L {{ "%.2f"|format(factura.gravado15) }}</span>
+        </div>
+        <div class="total-row">
+            <span>ISV 15%:</span>
+            <span>L {{ "%.2f"|format(factura.isv15) }}</span>
+        </div>
+        {% endif %}
+        
+        {% if factura.gravado18 > 0 %}
+        <div class="total-row">
+            <span>Gravado 18%:</span>
+            <span>L {{ "%.2f"|format(factura.gravado18) }}</span>
+        </div>
+        <div class="total-row">
+            <span>ISV 18%:</span>
+            <span>L {{ "%.2f"|format(factura.isv18) }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="total-row gran-total">
+            <span>TOTAL:</span>
+            <span>L {{ "%.2f"|format(factura.total) }}</span>
+        </div>
+        
+        <div class="total-row" style="margin-top: 5px;">
+            <span>Efectivo:</span>
+            <span>L {{ "%.2f"|format(factura.efectivo) }}</span>
+        </div>
+        <div class="total-row">
+            <span>Cambio:</span>
+            <span>L {{ "%.2f"|format(factura.cambio) }}</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>¡GRACIAS POR SU COMPRA!</p>
+        <p>LA FACTURA ES BENEFICIO DE TODOS, EXÍJALA</p>
+        <br>
+        <p>Original: Cliente / Copia: Emisor</p>
+    </div>
+
+    <div class="no-print">
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn" style="background-color: #6c757d;" onclick="window.close()">Cerrar</button>
+    </div>
+    
+    <script>
+        // Opcional: Auto-imprimir al cargar
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

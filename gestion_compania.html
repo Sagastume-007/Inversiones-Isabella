@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Empresa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container { max-width: 1040px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-save { background: #28a745; color: white; padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn-back { background: #6c757d; color: white; padding: 8px 14px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 0.9rem; }
+        .alert { padding: 8px 12px; background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; border-radius: 4px; margin-bottom: 12px; }
+    </style>
+    </head>
+<body>
+    <div class="container">
+        <h1>Configuración de Empresa</h1>
+
+        {% if msg %}
+        <div class="alert">{{ msg }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Nombre de la Compañía</label>
+                <input type="text" name="nombre_cia" value="{{ actual.nombre_cia if actual else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>Dirección 1</label>
+                <textarea name="direccion1" rows="2">{{ actual.direccion1 if actual else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Dirección 2</label>
+                <textarea name="direccion2" rows="2">{{ actual.direccion2 if actual else '' }}</textarea>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>RTN</label>
+                    <input type="text" name="rtn_cia" value="{{ actual.rtn_cia if actual else '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Correo</label>
+                    <input type="email" name="correo" value="{{ actual.correo if actual else '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" name="telefono" value="{{ actual.telefono if actual else '' }}">
+            </div>
+            <div>
+                <button type="submit" class="btn-save">Guardar</button>
+                <a href="/dashboard" class="btn-back">Inicio</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+

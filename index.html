@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas</title>
+    <style>
+        /* Layout reset matching the screenshot */
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 33%, #457b9d 66%, #90e0ef 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        
+        /* Top Header */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 20px;
+            background-color: #e6f7ff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #b3e0ff;
+        }
+        .top-header h1 {
+            color: #3399ff;
+            margin: 0;
+            font-size: 24px;
+            text-align: center;
+            flex-grow: 1;
+            font-weight: bold;
+        }
+        .total-box {
+            background-color: #fff;
+            border: 1px solid #3399ff;
+            border-radius: 5px;
+            padding: 5px 15px;
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 150px;
+            text-align: center;
+        }
+        .corr-box {
+            background-color: #fff;
+            border: 1px solid #6c9dff;
+            border-radius: 5px;
+            padding: 5px 15px;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            min-width: 220px;
+            text-align: center;
+            margin-left: 10px;
+        }
+
+        /* Main Content Grid */
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        /* Info Row (Client + Breakdown) */
+        .info-row {
+            display: flex;
+            gap: 10px;
+            min-height: 120px;
+        }
+
+        /* Client Info Box */
+        .client-box {
+            flex: 2;
+            background: #fff;
+            border: 1px solid #3399ff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            position: relative;
+        }
+        .client-box h3 {
+            color: #3399ff;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+        }
+        .client-box .add-btn {
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #3399ff;
+            font-size: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+            padding: 0;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            width: 80px;
+            color: #555;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Breakdown Box */
+        .breakdown-box {
+            flex: 1;
+            background: #fff;
+            /* No border shown prominently, but keeping clean */
+            padding: 10px 15px;
+            font-size: 13px;
+        }
+        .breakdown-box h3 {
+            color: #3399ff;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        /* Data Grid */
+        .grid-container {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #ccc;
+            overflow: auto;
+            position: relative;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead {
+            background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        td.descripcion {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 280px;
+            max-width: 280px;
+        }
+        .clip {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            max-width: 100%;
+        }
+        th {
+            font-weight: bold;
+            color: #333;
+            background-color: #f2f2f2;
+        }
+        /* Input in table */
+        td input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            outline: none;
+        }
+        td input:focus {
+            background: #e6f7ff;
+        }
+        
+        /* Right Sidebar Actions */
+        .right-sidebar {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-top: 40px; /* Align somewhat with table or center */
+        }
+        .action-btn {
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+        .action-btn .icon {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+        .action-btn span {
+            font-size: 11px;
+            color: #333;
+            text-align: center;
+            line-height: 1.1;
+            font-weight: 600;
+        }
+
+        /* Table Actions */
+        .row-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        .row-actions img {
+            width: 22px;
+            height: 22px;
+        }
+        .btn-icon {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #3399ff;
+            padding: 0;
+        }
+        .btn-icon.delete {
+            color: #ff4d4f;
+        }
+        
+        /* Highlight selected row style (placeholder) */
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Pago Modal */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .modal {
+            background: #ffffff;
+            border: 1px solid #3399ff;
+            border-radius: 10px;
+            width: 700px;
+            max-width: 95vw;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0f1ff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #1a252f;
+        }
+        .modal-body {
+            padding: 16px;
+            display: flex;
+            gap: 16px;
+        }
+        .modal-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .modal-row label {
+            width: 140px;
+            color: #555;
+            font-size: 14px;
+        }
+        .modal-row input, .modal-row select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #e0f1ff;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-left {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-right {
+            width: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0 10px 20px;  
+        }
+        .imp-frame {
+            background: #F8F9F9;
+            border: 1px solid #D5D8DC;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        .total-pagar-box {
+            background-color: #FADBD8;
+            color: #C0392B;
+            font-weight: bold;
+            font-size: 20px;
+            border: 2px solid #C0392B;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .total-pagado-box {
+            background-color: #E8F6F3;
+            color: #148F77;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #52C9B0;
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+        }
+        .cambio-box {
+            background-color: #D4EFDF;
+            color: #196F3D;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #27AE60;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .keypad button {
+            background-color: #D5F5E3;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 72px;
+            height: 72px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .keypad button:hover {
+            background-color: #A9DFBF;
+        }
+        .chk-exenta {
+            font-weight: bold;
+            font-size: 14px;
+            color: #D35400;
+            padding: 5px;
+        }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #3399ff;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: #f0f6ff;
+            color: #1a252f;
+            border: 1px solid #b3e0ff;
+        }
+        @media (max-width: 768px) {
+            body { padding: 6px; height: auto; overflow: auto; }
+            .top-header { flex-wrap: wrap; gap: 8px; padding: 8px; }
+            .top-header h1 { font-size: 18px; flex: 1 0 100%; order: 0; text-align: center; }
+            .total-box { font-size: 18px; min-width: auto; flex: 1 0 100%; order: 2; }
+            #btn-reimprimir { flex: 1 0 100%; order: 1; }
+            .main-container { flex-direction: column; overflow: auto; }
+            .info-row { flex-direction: column; min-height: auto; }
+            .client-box { padding: 10px; }
+            .client-box .form-group label { width: 90px; font-size: 13px; }
+            .client-box .form-group input, .client-box .form-group select { font-size: 16px; padding: 10px; }
+            .breakdown-box { font-size: 14px; }
+            .grid-container { overflow-x: auto; }
+            table { min-width: 680px; font-size: 14px; }
+            .right-sidebar { width: 100%; flex-direction: row; gap: 10px; padding-top: 8px; }
+            .action-btn { height: 64px; }
+            .action-btn .icon { font-size: 28px; }
+            .action-btn span { font-size: 12px; }
+            .row-actions img { width: 16px; height: 16px; }
+            .overlay .modal { width: 95vw; height: 95vh; display: flex; flex-direction: column; }
+            .modal-body { flex-direction: column; overflow: auto; }
+            .modal-left, .modal-right { width: 100%; }
+            .keypad { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+            .keypad button { width: 100%; height: 56px; font-size: 18px; }
+            .total-pagar-box { font-size: 18px; }
+            .total-pagado-box { font-size: 16px; }
+            .cambio-box { font-size: 18px; }
+            .modal-footer { position: sticky; bottom: 0; background: #ffffff; }
+        }
+        @media (max-width: 480px) {
+            .top-header { padding: 6px; }
+            .total-box { font-size: 16px; }
+            .action-btn { height: 56px; border-radius: 10px; }
+            .action-btn .icon { font-size: 24px; }
+            .client-box h3, .breakdown-box h3 { font-size: 14px; }
+            th, td { padding: 6px; }
+            .modal-row label { width: 120px; font-size: 13px; }
+            .modal-row input, .modal-row select { font-size: 16px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <div class="top-header">
+        <h1>Ventas</h1>
+        <button id="btn-reimprimir" class="btn btn-secondary" style="display:none; margin-left: 10px;" onclick="reimprimirUltima()">🖨️ Reimprimir Última</button>
+        <div class="total-box">Total a pagar: <span id="header-total">L 0.00</span></div>
+        <div class="corr-box">Correlativo: <span id="header-corr">—</span></div>
+        <button class="btn btn-secondary" onclick="refrescarPedidosPendientes()">Refrescar</button>
+    </div>
+
+    <div class="overlay" id="cliente-overlay" tabindex="-1">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span>Nuevo Cliente</span>
+                <button class="btn btn-secondary" onclick="cerrarNuevoCliente()">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-left">
+                    <div class="modal-row"><label>Nombre:</label><input type="text" id="nuevo-cli-nombre" placeholder="Nombre del cliente"></div>
+                    <div class="modal-row"><label>RTN:</label><input type="text" id="nuevo-cli-rtn" placeholder="RTN (opcional)"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarNuevoCliente()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarNuevoCliente()">Guardar</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="apertura-overlay" tabindex="-1">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span>Apertura de Caja</span>
+            </div>
+            <div class="modal-body">
+                <div class="modal-row" style="width:100%;">
+                    <label>Monto de apertura</label>
+                    <input type="text" id="apertura-monto" placeholder="0.00">
+                </div>
+                <div class="modal-row" style="width:100%;">
+                    <label>Usuario</label>
+                    <input type="text" id="apertura-usuario" placeholder="Usuario">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmarApertura()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="pedidos-overlay" tabindex="-1">
+        <div class="modal" role="dialog" aria-modal="true" style="width: 900px; max-width: 95vw; height: 80vh;">
+            <div class="modal-header">
+                <span>Pedidos</span>
+                <button class="btn btn-secondary" onclick="cerrarPedidosOverlay()">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-left" style="width:100%;">
+                    <div class="modal-row" style="width:100%;">
+                        <label>Estado</label>
+                        <select id="pedidos-filter" onchange="refrescarPedidosPendientes()">
+                            <option value="pendiente" selected>Pendientes</option>
+                            <option value="">Todos</option>
+                            <option value="generado">Generados</option>
+                        </select>
+                    </div>
+                    <div class="modal-row" style="width:100%;">
+                        <label>Buscar</label>
+                        <input type="text" id="pedidos-search" placeholder="Número, cliente o RTN" oninput="buscarPedidosPendientes()">
+                    </div>
+                    <div style="max-height:60vh; overflow:auto; border:1px solid #e0f1ff; border-radius:6px;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Número</th>
+                                    <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Cliente</th>
+                                    <th style="padding:6px; border-bottom:1px solid #e0f1ff; text-align:right;">Total</th>
+                                    <th style="padding:6px; border-bottom:1px solid #e0f1ff;">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pedidos-list-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="refrescarPedidosPendientes()">Refrescar</button>
+                <button class="btn btn-primary" onclick="cargarPedidoSeleccionadoOverlay()">Cargar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="pago-overlay" tabindex="-1">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span>Cobro</span>
+                <button class="btn btn-secondary" onclick="cerrarPago()">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-left">
+                    <div id="pago-factura" style="color:red; font-weight:bold; font-size:16px;">Factura: —</div>
+                    <div id="pago-cai" style="font-weight:bold; font-size:10px;">CAI: —</div>
+                    <label class="chk-exenta"><input type="checkbox" id="pago-exenta" checked> Factura Exenta (sin desglose de impuestos)</label>
+                    <div class="total-pagar-box" id="pago-total-box">Total a pagar: L 0.00</div>
+                    <div class="imp-frame" id="pago-imp-frame">
+                        <div id="pago-exento-line">Ventas Exentas:      L 0.00</div>
+                        <div id="pago-g15-line">Gravado 15%:         L 0.00</div>
+                        <div id="pago-i15-line">ISV 15%:             L 0.00</div>
+                        <div id="pago-g18-line">Gravado 18%:         L 0.00</div>
+                        <div id="pago-i18-line">ISV 18%:             L 0.00</div>
+                    </div>
+                    <div>Método de Pago:</div>
+                    <select id="pago-metodo" onchange="actualizarPagoCampos()">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="mixto">Pago Mixto</option>
+                    </select>
+                    <div class="modal-row"><label>Efectivo:</label><input type="text" id="pago-ef" placeholder="0.00" oninput="recalcularPago()"></div>
+                    <div class="modal-row"><label>Tarjeta:</label><input type="text" id="pago-tar" placeholder="0.00" oninput="recalcularPago()"></div>
+                    <div class="modal-row"><label>Transferencia:</label><input type="text" id="pago-tr" placeholder="0.00" oninput="recalcularPago()"></div>
+                    <div class="total-pagado-box" id="pago-total-pag">Total Pagado: L 0.00</div>
+                    <div class="cambio-box" id="pago-cambio-text">Cambio: L 0.00</div>
+                    <label style="font-weight:bold;"><input type="checkbox" id="pago-print"> Enviar factura a impresora</label>
+                </div>
+                <div class="modal-right">
+                    <div class="keypad">
+                        <button onclick="pagoKeyPress('7')">7</button>
+                        <button onclick="pagoKeyPress('8')">8</button>
+                        <button onclick="pagoKeyPress('9')">9</button>
+                        <button onclick="pagoKeyPress('4')">4</button>
+                        <button onclick="pagoKeyPress('5')">5</button>
+                        <button onclick="pagoKeyPress('6')">6</button>
+                        <button onclick="pagoKeyPress('1')">1</button>
+                        <button onclick="pagoKeyPress('2')">2</button>
+                        <button onclick="pagoKeyPress('3')">3</button>
+                        <button onclick="pagoKeyPress('.')">.</button>
+                        <button onclick="pagoKeyPress('0')">0</button>
+                        <button onclick="pagoKeyPress('←')">←</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarPago()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarPago()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <!-- Info Row -->
+            <div class="info-row">
+                <!-- Client Info -->
+                <div class="client-box">
+                    <h3>Información de Cliente</h3>
+                    <button class="add-btn" title="Nuevo Cliente" onclick="abrirNuevoCliente()">+</button>
+                    <div class="form-group">
+                        <label>RTN No:</label>
+                        <input type="text" id="rtn-input" list="rtn-list" placeholder="Buscar RTN...">
+                        <datalist id="rtn-list"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Cliente:</label>
+                        <input type="text" id="cliente-input" placeholder="Nombre del cliente" list="cliente-list">
+                        <datalist id="cliente-list"></datalist>
+                    </div>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="breakdown-box">
+                    <h3>Desglose de Venta</h3>
+                    <div class="breakdown-row"><span>Exento:</span> <span id="exento">L 0.00</span></div>
+                    <div class="breakdown-row"><span>Gravado 15%:</span> <span id="gravado15">L 0.00</span></div>
+                    <div class="breakdown-row"><span>Gravado 18%:</span> <span id="gravado18">L 0.00</span></div>
+                    <div class="breakdown-row"><span>ISV 15%:</span> <span id="isv15">L 0.00</span></div>
+                    <div class="breakdown-row"><span>ISV 18%:</span> <span id="isv18">L 0.00</span></div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="grid-container">
+                <table id="tabla-venta">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">No.</th>
+                            <th style="width: 120px;">Código</th>
+                            <th>Descripción</th>
+                            <th style="width: 80px; text-align: center;">Cantidad</th>
+                            <th style="width: 100px; text-align: right;">Precio</th>
+                            <th style="width: 100px; text-align: right;">Total</th>
+                            <th style="width: 80px; text-align: center;">ISV</th>
+                            <th style="width: 80px; text-align: center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <button class="action-btn" id="btn-pagar" onclick="pagar()">
+                <img src="/iconos/cobrar.png" class="icon" alt="Pagar">
+                <span>Pagar</span>
+            </button>
+            <button class="action-btn" id="btn-eliminar-todos" onclick="limpiarTabla()">
+                <img src="/iconos/eliminar.png" class="icon" alt="Eliminar">
+                <span>Eliminar</span>
+            </button>
+            <button class="action-btn" id="btn-limpiar-form" onclick="limpiarTodo()">
+                <img src="/iconos/limpiar.png" class="icon" alt="Limpiar">
+                <span>Limpiar</span>
+            </button>
+            <button class="action-btn" id="btn-pedidos-pend" onclick="abrirPedidosOverlay()">
+                <img src="/iconos/Pedidos.png" class="icon" alt="Pedidos">
+                <span>Pedidos</span>
+            </button>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <input id="pedido-num-input" placeholder="PED-000001" style="padding:6px; border:1px solid #ddd; border-radius:6px; min-width:0;">
+                <button class="btn btn-primary" onclick="cargarPedidoEnVenta()">Cargar por número</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tablaBody = document.querySelector("#tabla-venta tbody");
+        const LOGGED_USER = "{{ (usuario.nombre if usuario and usuario.nombre else (usuario.usuario if usuario else '')) }}";
+
+        async function checkUltimaFactura() {
+            try {
+                const res = await fetch("/api/ultima-factura");
+                const data = await res.json();
+                if (data && data.id) {
+                    const btn = document.getElementById("btn-reimprimir");
+                    if(btn) {
+                        btn.style.display = "inline-block";
+                        btn.setAttribute("onclick", `window.open('/factura/imprimir/${data.id}', '_blank', 'width=400,height=600')`);
+                    }
+                }
+            } catch (e) {
+                console.log("Error checking last invoice", e);
+            }
+        }
+
+        function reimprimirUltima() {
+            // Placeholder, el onclick se sobreescribe dinamicamente
+            alert("No hay factura reciente para imprimir.");
+        }
+
+        function initVenta() {
+            checkAperturaEstado();
+            agregarFila();
+            checkUltimaFactura();
+            cargarClientesVentas();
+            cargarPedidosPendientes();
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const ped = params.get("numero_pedido");
+                if (ped) {
+                    document.getElementById("pedido-num-input").value = ped;
+                    cargarPedidoEnVenta();
+                }
+            } catch(e) {}
+        }
+        function abrirNuevoCliente() {
+            const ov = document.getElementById("cliente-overlay");
+            ov.style.display = "flex";
+            document.getElementById("nuevo-cli-nombre").value = "";
+            document.getElementById("nuevo-cli-rtn").value = "";
+            setTimeout(()=>document.getElementById("nuevo-cli-nombre").focus(), 10);
+        }
+        function cerrarNuevoCliente() {
+            const ov = document.getElementById("cliente-overlay");
+            ov.style.display = "none";
+        }
+        async function confirmarNuevoCliente() {
+            const nombre = String(document.getElementById("nuevo-cli-nombre").value||"").trim();
+            const rtn = String(document.getElementById("nuevo-cli-rtn").value||"").trim();
+            if (!nombre) { alert("Ingrese el nombre del cliente"); return; }
+            try{
+                const resp = await fetch("/api/clientes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nombre, rtn }) });
+                const data = await resp.json();
+                if (!resp.ok || (data && data.error)) { alert((data && data.error) || "No se pudo crear el cliente"); return; }
+                await cargarClientesVentas();
+                document.getElementById("cliente-input").value = nombre;
+                document.getElementById("rtn-input").value = rtn;
+                cerrarNuevoCliente();
+            } catch(e){
+                alert("Error de conexión");
+            }
+        }
+
+        let suggestionsBox = null;
+        let codigoDebounce = null;
+        let suggestionsIndex = -1;
+        let suggestionsItems = [];
+        let suggestionsAnchorInput = null;
+        function esCodigoBarras(val) {
+            const s = String(val || "").trim();
+            return /^\d{6,}$/.test(s);
+        }
+        function closeSuggestions() {
+            if (suggestionsBox && suggestionsBox.parentNode) {
+                suggestionsBox.parentNode.removeChild(suggestionsBox);
+            }
+            suggestionsBox = null;
+            suggestionsItems = [];
+            suggestionsIndex = -1;
+            suggestionsAnchorInput = null;
+        }
+        document.addEventListener("click", (e) => {
+            if (suggestionsBox && !suggestionsBox.contains(e.target)) {
+                closeSuggestions();
+            }
+        });
+        async function handleCodigoInput(input) {
+            const q = input.value.trim();
+            if (q.length < 2) {
+                closeSuggestions();
+                return;
+            }
+            if (codigoDebounce) {
+                clearTimeout(codigoDebounce);
+            }
+            codigoDebounce = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`/api/productos?q=${encodeURIComponent(q)}`);
+                    if (!resp.ok) {
+                        closeSuggestions();
+                        return;
+                    }
+                    const arr = await resp.json();
+                    if (Array.isArray(arr) && arr.length > 0) {
+                        renderSuggestions(input, arr.slice(0, 20));
+                    } else {
+                        closeSuggestions();
+                    }
+                } catch {
+                    closeSuggestions();
+                }
+            }, 200);
+        }
+        function renderSuggestions(anchorInput, items) {
+            closeSuggestions();
+            const rect = anchorInput.getBoundingClientRect();
+            suggestionsBox = document.createElement("div");
+            suggestionsBox.style.position = "absolute";
+            suggestionsBox.style.left = `${rect.left + window.scrollX}px`;
+            suggestionsBox.style.top = `${rect.bottom + window.scrollY}px`;
+            suggestionsBox.style.minWidth = `${rect.width}px`;
+            suggestionsBox.style.background = "#fff";
+            suggestionsBox.style.border = "1px solid #3399ff";
+            suggestionsBox.style.borderRadius = "6px";
+            suggestionsBox.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+            suggestionsBox.style.zIndex = "9999";
+            suggestionsBox.style.maxHeight = "240px";
+            suggestionsBox.style.overflowY = "auto";
+            suggestionsItems = items;
+            suggestionsAnchorInput = anchorInput;
+            items.forEach(it => {
+                const row = document.createElement("div");
+                row.style.padding = "8px 10px";
+                row.style.cursor = "pointer";
+                row.style.display = "flex";
+                row.style.justifyContent = "space-between";
+                row.style.alignItems = "center";
+                const id6 = String(it.id || "").padStart(6, "0");
+                const labelCode = (it.codigo && String(it.codigo).trim() !== "") ? it.codigo : id6;
+                row.innerHTML = `<span>[${labelCode}] ${it.nombre || ""}</span><span style="color:#666;font-size:12px;">${Number(it.precio || 0).toFixed(2)}</span>`;
+                row.addEventListener("mouseenter", ()=>row.style.background="#e6f7ff");
+                row.addEventListener("mouseleave", ()=>row.style.background="transparent");
+                row.addEventListener("click", async () => {
+                    const id6 = String(it.id || "").padStart(6, "0");
+                    anchorInput.value = id6;
+                    closeSuggestions();
+                    await buscarProducto(anchorInput);
+                });
+                suggestionsBox.appendChild(row);
+            });
+            document.body.appendChild(suggestionsBox);
+        }
+        function highlightSuggestion(idx) {
+            if (!suggestionsBox) return;
+            const rows = Array.from(suggestionsBox.children);
+            rows.forEach((r, i) => {
+                r.style.background = i === idx ? "#ccecff" : "transparent";
+            });
+            const el = rows[idx];
+            if (el) {
+                const top = el.offsetTop;
+                const bottom = top + el.offsetHeight;
+                if (top < suggestionsBox.scrollTop) {
+                    suggestionsBox.scrollTop = top;
+                } else if (bottom > suggestionsBox.scrollTop + suggestionsBox.clientHeight) {
+                    suggestionsBox.scrollTop = bottom - suggestionsBox.clientHeight;
+                }
+            }
+        }
+        function moveSuggestionSelection(delta) {
+            if (!suggestionsBox || !suggestionsItems.length) return;
+            const len = suggestionsItems.length;
+            suggestionsIndex = suggestionsIndex + delta;
+            if (suggestionsIndex < 0) suggestionsIndex = 0;
+            if (suggestionsIndex > len - 1) suggestionsIndex = len - 1;
+            highlightSuggestion(suggestionsIndex);
+        }
+
+        function agregarFila() {
+            const index = tablaBody.rows.length + 1;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="text-align: center;">${index}</td>
+                <td><input type="text" class="codigo" placeholder="" onkeydown="checkEnter(event, this)" oninput="handleCodigoInput(this)" onchange="buscarProducto(this)"></td>
+                <td class="descripcion"></td>
+                <td><input type="number" class="cantidad" value="1.00" min="1" step="0.01" oninput="calcularFila(this.closest('tr'))" onblur="formatearCantidad(this)" onkeydown="checkEnterCantidad(event, this)" style="text-align: center;" placeholder="Cantidad"></td>
+                <td class="precio" style="text-align: right;"></td>
+                <td class="total-fila" style="text-align: right;"></td>
+                <td class="isv" style="text-align: center;"></td>
+                <td class="row-actions">
+                    <button class="btn-icon" onclick="aumentarCantidadFila(this)"><img src="/iconos/arriba.png" alt="+"></button>
+                    <button class="btn-icon" onclick="reducirCantidadFila(this)"><img src="/iconos/abajo.png" alt="-"></button>
+                    <button class="btn-icon delete" onclick="borrarFila(this)"><img src="/iconos/eliminar.png" alt="x"></button>
+                </td>
+            `;
+            tablaBody.appendChild(tr);
+            tr.querySelector(".codigo").focus();
+        }
+
+        async function checkEnter(e, input) {
+            if (e.key === "Tab") {
+                const tr = input.closest("tr");
+                if (tr === tablaBody.lastElementChild && esFilaEnBlanco(tr)) {
+                    e.preventDefault();
+                    input.focus();
+                    const len = String(input.value || "").length;
+                    try { input.setSelectionRange(len, len); } catch (err) {}
+                    return;
+                }
+            }
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (suggestionsBox) {
+                    moveSuggestionSelection(1);
+                    return;
+                }
+                const tr = input.closest("tr");
+                const next = tr.nextElementSibling;
+                if (next) {
+                    const codeInput = next.querySelector(".codigo");
+                    if (codeInput) codeInput.focus();
+                }
+                return;
+            }
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (suggestionsBox) {
+                    moveSuggestionSelection(-1);
+                    return;
+                }
+                const tr = input.closest("tr");
+                const prev = tr.previousElementSibling;
+                if (prev) {
+                    const codeInput = prev.querySelector(".codigo");
+                    if (codeInput) codeInput.focus();
+                }
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                if (suggestionsBox) {
+                    closeSuggestions();
+                    input.value = "";
+                    input.focus();
+                    return;
+                }
+                closeSuggestions();
+                return;
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                if (suggestionsBox && suggestionsItems.length && suggestionsIndex >= 0) {
+                    const it = suggestionsItems[suggestionsIndex];
+                    const anchor = suggestionsAnchorInput || input;
+                    const id6 = String(it.id || "").padStart(6, "0");
+                    anchor.value = id6;
+                    closeSuggestions();
+                    const ok = await buscarProducto(anchor);
+                    if (!ok) return;
+                    const dest = tablaBody.lastElementChild?.querySelector(".codigo");
+                    if (dest) dest.focus();
+                    return;
+                }
+                const ok = await buscarProducto(input);
+                if (!ok) return;
+                const dest = tablaBody.lastElementChild?.querySelector(".codigo");
+                if (dest) dest.focus();
+            }
+        }
+
+        async function buscarProducto(input) {
+            const tr = input.closest("tr");
+            const codigo = input.value.trim();
+            if (!codigo) return;
+
+            try {
+                const res = await fetch(`/api/producto/${encodeURIComponent(codigo)}`);
+                if (!res.ok) {
+                    // Intentar búsqueda por nombre/descripción
+                    const resp2 = await fetch(`/api/productos?q=${encodeURIComponent(codigo)}`);
+                    if (resp2.ok) {
+                        const arr = await resp2.json();
+                        if (Array.isArray(arr) && arr.length > 0) {
+                            if (arr.length === 1) {
+                                const id6 = String(arr[0].id || "").padStart(6, "0");
+                                input.value = id6;
+                                // Recursivo para llenar con endpoint de producto
+                                return await buscarProducto(input);
+                            }
+                            renderSuggestions(input, arr.slice(0, 20));
+                            return false;
+                        }
+                    }
+                    alertOnce("El código no existe");
+                    input.focus();
+                    input.select();
+                    return false;
+                }
+                const p = await res.json();
+                const precio = typeof p.precio === "number" ? p.precio : parseFloat(p.precio) || 0;
+                const isvId = parseInt(p.id_isv || 3, 10);
+                const isvLabel = isvId === 1 ? "15%" : (isvId === 2 ? "18%" : "Exento");
+                try {
+                    const id6 = String(p.id != null ? p.id : "").padStart(6, "0");
+                    if (id6 && id6.trim() !== "" && /^\d{6}$/.test(id6)) {
+                        input.value = id6;
+                    }
+                } catch(e) {}
+                {
+                    const cell = tr.querySelector(".descripcion");
+                    cell.innerHTML = "";
+                    const span = document.createElement("span");
+                    span.className = "clip";
+                    span.textContent = p.nombre || "";
+                    cell.appendChild(span);
+                }
+                tr.querySelector(".precio").textContent = precio.toFixed(2);
+                tr.querySelector(".isv").textContent = isvLabel;
+                const qty = tr.querySelector(".cantidad");
+                const esPesable = (p.pesable === 1 || p.pesable === "1" || p.pesable === true);
+                tr.dataset.pesable = esPesable ? "1" : "0";
+                if (esPesable) {
+                    qty.type = "text";
+                    qty.value = "";
+                    qty.removeAttribute("min");
+                    qty.placeholder = "Ingrese peso";
+                    qty.focus();
+                } else {
+                    qty.type = "number";
+                    if (!qty.value || qty.value.trim() === "") qty.value = "1.00";
+                    qty.min = "1";
+                    qty.step = "0.01";
+                    qty.placeholder = "Cantidad";
+                }
+                calcularFila(tr);
+                if (tr === tablaBody.lastElementChild && !esPesable) {
+                    agregarFila();
+                }
+                closeSuggestions();
+                return true;
+            } catch (e) {
+                alertOnce("El código no existe");
+                input.focus();
+                input.select();
+                return false;
+            }
+        }
+
+        function checkEnterCantidad(e, input) {
+            if (e.shiftKey && e.key === "ArrowUp") {
+                e.preventDefault();
+                const tr = input.closest("tr");
+                const esPesable = tr.dataset.pesable === "1";
+                let val = parseFloat(String(input.value || "").replace(",", ".")) || 0;
+                if (esPesable) {
+                    val = val + 0.10;
+                    if (val < 0.01) val = 0.01;
+                } else {
+                    val = (val || 1) + 1.00;
+                    if (val < 1.00) val = 1.00;
+                }
+                input.value = val.toFixed(2);
+                calcularFila(tr);
+                input.focus();
+                try { input.setSelectionRange(input.value.length, input.value.length); } catch (_) {}
+                return;
+            }
+            if (e.shiftKey && e.key === "ArrowDown") {
+                e.preventDefault();
+                const tr = input.closest("tr");
+                const esPesable = tr.dataset.pesable === "1";
+                let val = parseFloat(String(input.value || "").replace(",", ".")) || (esPesable ? 0 : 1);
+                if (esPesable) {
+                    val = Math.max(val - 0.10, 0.01);
+                } else {
+                    val = Math.max(val - 1.00, 1.00);
+                }
+                input.value = val.toFixed(2);
+                calcularFila(tr);
+                input.focus();
+                try { input.setSelectionRange(input.value.length, input.value.length); } catch (_) {}
+                return;
+            }
+            if (e.key === "Tab") {
+                const tr = input.closest("tr");
+                if (tr === tablaBody.lastElementChild && esFilaEnBlanco(tr)) {
+                    e.preventDefault();
+                    input.focus();
+                    const len = String(input.value || "").length;
+                    try { input.setSelectionRange(len, len); } catch (err) {}
+                    return;
+                }
+            }
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const tr = input.closest("tr");
+                const next = tr.nextElementSibling;
+                if (next) {
+                    if (next === tablaBody.lastElementChild && esFilaEnBlanco(next)) {
+                        const codeInput = next.querySelector(".codigo");
+                        if (codeInput) codeInput.focus();
+                    } else {
+                        const qtyInput = next.querySelector(".cantidad");
+                        if (qtyInput) {
+                            qtyInput.focus();
+                            const val = String(qtyInput.value || "");
+                            const len = val.length;
+                            try { qtyInput.setSelectionRange(len, len); } catch (err) {
+                                qtyInput.value = "";
+                                qtyInput.value = val;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const tr = input.closest("tr");
+                const prev = tr.previousElementSibling;
+                if (prev) {
+                    const qtyInput = prev.querySelector(".cantidad");
+                    if (qtyInput) {
+                        qtyInput.focus();
+                        const val = String(qtyInput.value || "");
+                        const len = val.length;
+                        try { qtyInput.setSelectionRange(len, len); } catch (err) {
+                            qtyInput.value = "";
+                            qtyInput.value = val;
+                        }
+                    }
+                }
+                return;
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const tr = input.closest("tr");
+                const esPesable = tr.dataset.pesable === "1";
+                if (esPesable) {
+                    const raw = String(input.value || "").trim();
+                    const sanitized = raw.replace(/[^0-9.,]/g, "").replace(",", ".");
+                    const val = parseFloat(sanitized);
+                    if (isNaN(val) || val <= 0) {
+                        alert("Debe ingresar el peso antes de continuar");
+                        input.focus();
+                        return;
+                    }
+                    input.value = val.toFixed(2);
+                } else {
+                    const val = parseFloat(input.value);
+                    if (isNaN(val) || val <= 0) {
+                        alert("Cantidad inválida");
+                        input.focus();
+                        return;
+                    }
+                    input.value = val.toFixed(2);
+                }
+                calcularFila(tr);
+                const isLast = tr === tablaBody.lastElementChild;
+                if (isLast) {
+                    agregarFila();
+                }
+                const next = tr.nextElementSibling || tablaBody.lastElementChild;
+                if (next) {
+                    const codeInput = next.querySelector(".codigo");
+                    if (codeInput) codeInput.focus();
+                }
+            }
+        }
+
+        function calcularFila(tr) {
+            const precioTxt = tr.querySelector(".precio").textContent;
+            const precio = parseFloat(precioTxt) || 0;
+            const qtyInput = tr.querySelector(".cantidad");
+            const esPesable = tr.dataset.pesable === "1";
+            let cantidad = 0;
+            if (esPesable) {
+                const raw = String(qtyInput.value || "").trim();
+                const sanitized = raw.replace(/[^0-9.,]/g, "").replace(",", ".");
+                cantidad = parseFloat(sanitized) || 0;
+            } else {
+                cantidad = parseFloat(qtyInput.value) || 0;
+            }
+            const total = precio * cantidad;
+            
+            tr.querySelector(".total-fila").textContent = total.toFixed(2);
+            recalcularTotalesGlobales();
+        }
+
+        function recalcularTotalesGlobales() {
+            let exento = 0, grav15 = 0, grav18 = 0, isv15 = 0, isv18 = 0, totalGlobal = 0;
+
+            Array.from(tablaBody.rows).forEach(tr => {
+                const totalFila = parseFloat(tr.querySelector(".total-fila").textContent) || 0;
+                const imp = tr.querySelector(".isv").textContent;
+
+                if (totalFila > 0) {
+                    if (imp === "Exento") {
+                        exento += totalFila;
+                    } else if (imp === "15%") {
+                        // Tax Inclusive Logic (matching backend)
+                        const base = totalFila / 1.15;
+                        const isv = totalFila - base;
+                        grav15 += base;
+                        isv15 += isv;
+                    } else if (imp === "18%") {
+                        // Tax Inclusive Logic
+                        const base = totalFila / 1.18;
+                        const isv = totalFila - base;
+                        grav18 += base;
+                        isv18 += isv;
+                    }
+                }
+            });
+
+            // Total should be the sum of the line totals (which are inclusive)
+            // But if we sum breakdown components:
+            totalGlobal = exento + grav15 + isv15 + grav18 + isv18; 
+            // This should roughly equal sum(totalFila) barring rounding differences.
+            // Better to sum totalFila for display Total to avoid rounding confusion?
+            // Actually, for accounting, sum components.
+
+            document.getElementById("exento").textContent = "L " + exento.toFixed(2);
+            document.getElementById("gravado15").textContent = "L " + grav15.toFixed(2);
+            document.getElementById("gravado18").textContent = "L " + grav18.toFixed(2);
+            document.getElementById("isv15").textContent = "L " + isv15.toFixed(2);
+            document.getElementById("isv18").textContent = "L " + isv18.toFixed(2);
+            
+            const totalStr = "L " + totalGlobal.toFixed(2);
+            document.getElementById("header-total").textContent = totalStr;
+        }
+        async function cargarPedidoEnVenta(){
+            const num = (document.getElementById("pedido-num-input").value||"").trim();
+            if(!num){ alert("Ingrese número de pedido"); return; }
+            try{
+                const r = await fetch(`/api/pedidos/${encodeURIComponent(num)}`);
+                const j = await r.json();
+                if(!r.ok){ alert(j.error || "Pedido no encontrado"); return; }
+                window._pedidoEstado = (j.header.estado || "pendiente");
+                document.getElementById("cliente-input").value = j.header.cliente || "";
+                document.getElementById("rtn-input").value = j.header.rtn_cliente || "";
+                tablaBody.innerHTML = "";
+                j.items.forEach((it, idx)=>{
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="text-align: center;">${idx+1}</td>
+                        <td><input type="text" class="codigo" value="${it.codigo}" onkeydown="checkEnter(event, this)" oninput="handleCodigoInput(this)" onchange="buscarProducto(this)"></td>
+                        <td class="descripcion">${it.descripcion}</td>
+                        <td><input type="number" class="cantidad" value="${Number(it.cantidad||0).toFixed(2)}" min="0.01" step="0.01" oninput="calcularFila(this.closest('tr'))" onblur="formatearCantidad(this)" onkeydown="checkEnterCantidad(event, this)" style="text-align: center;" placeholder="Cantidad"></td>
+                        <td class="precio" style="text-align: right;">${Number(it.precio||0).toFixed(2)}</td>
+                        <td class="total-fila" style="text-align: right;"></td>
+                        <td class="isv" style="text-align: center;">${it.id_isv===1?'15%':(it.id_isv===2?'18%':'Exento')}</td>
+                        <td class="row-actions">
+                            <button class="btn-icon" onclick="aumentarCantidadFila(this)"><img src="/iconos/arriba.png" alt="+"></button>
+                            <button class="btn-icon" onclick="reducirCantidadFila(this)"><img src="/iconos/abajo.png" alt="-"></button>
+                            <button class="btn-icon delete" onclick="borrarFila(this)"><img src="/iconos/eliminar.png" alt="x"></button>
+                        </td>
+                    `;
+                    tablaBody.appendChild(tr);
+                    calcularFila(tr);
+                });
+                recalcularTotalesGlobales();
+                try { agregarFila(); } catch(e){}
+            } catch(e){
+                alert("Error al cargar pedido");
+            }
+        }
+        async function cargarPedidosPendientes(){
+            try{
+                // Llenar el selector rápido siempre con pendientes
+                const respSel = await fetch("/api/pedidos?estado=pendiente&limit=50");
+                const arrSel = await respSel.json();
+                const sel = document.getElementById("pendientes-select");
+                if(sel){
+                    sel.innerHTML = "";
+                    const def = document.createElement("option");
+                    def.value = "";
+                    def.textContent = "Pedidos pendientes…";
+                    sel.appendChild(def);
+                    if(Array.isArray(arrSel)){
+                        arrSel.forEach(p=>{
+                            const opt = document.createElement("option");
+                            opt.value = p.numero_pedido || "";
+                            const total = Number(p.total||0).toFixed(2);
+                            opt.textContent = `${p.numero_pedido || ""} · ${p.cliente || ""} · L ${total}`;
+                            sel.appendChild(opt);
+                        });
+                    }
+                }
+                const ov = document.getElementById("pedidos-overlay");
+                if(ov && ov.style.display==="flex"){
+                    const filtroEl = document.getElementById("pedidos-filter");
+                    const estadoSel = filtroEl ? filtroEl.value : "pendiente";
+                    let url = `/api/pedidos?limit=50`;
+                    if(estadoSel){ url += `&estado=${encodeURIComponent(estadoSel)}`; }
+                    const resp = await fetch(url);
+                    const arr = await resp.json();
+                    if(Array.isArray(arr)){
+                        renderPedidosList(arr);
+                    }
+                }
+            } catch(e){}
+        }
+        function refrescarPedidosPendientes(){ cargarPedidosPendientes(); }
+        function cargarPedidoSeleccionado(){
+            const sel = document.getElementById("pendientes-select");
+            const num = sel.value;
+            if(!num){ alert("Seleccione un pedido"); return; }
+            document.getElementById("pedido-num-input").value = num;
+            cargarPedidoEnVenta();
+        }
+        let _pedidoSeleccionado = "";
+        function abrirPedidosOverlay(){
+            const ov = document.getElementById("pedidos-overlay");
+            ov.style.display = "flex";
+            _pedidoSeleccionado = "";
+            document.getElementById("pedidos-search").value = "";
+            renderPedidosList([]);
+            cargarPedidosPendientes();
+            setTimeout(()=>document.getElementById("pedidos-search").focus(), 10);
+        }
+        function cerrarPedidosOverlay(){
+            const ov = document.getElementById("pedidos-overlay");
+            ov.style.display = "none";
+        }
+        function renderPedidosList(arr){
+            const tb = document.getElementById("pedidos-list-body");
+            tb.innerHTML = "";
+            arr.forEach(p=>{
+                const tr = document.createElement("tr");
+                tr.style.cursor = "pointer";
+                tr.dataset.numero = p.numero_pedido || "";
+                const total = Number(p.total||0).toFixed(2);
+                tr.innerHTML = `
+                    <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.numero_pedido || ""}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.cliente || ""}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f6ff; text-align:right;">L ${total}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f6ff;">${p.fecha || ""}</td>
+                `;
+                tr.addEventListener("click", ()=>{
+                    _pedidoSeleccionado = tr.dataset.numero;
+                    Array.from(tb.children).forEach(r=>r.style.background="");
+                    tr.style.background = "#e6f7ff";
+                });
+                tr.addEventListener("dblclick", ()=>{
+                    const num = tr.dataset.numero;
+                    if(num){
+                        document.getElementById("pedido-num-input").value = num;
+                        cargarPedidoEnVenta();
+                        cerrarPedidosOverlay();
+                    }
+                });
+                tb.appendChild(tr);
+            });
+        }
+        async function buscarPedidosPendientes(){
+            const q = (document.getElementById("pedidos-search").value||"").trim();
+            try{
+                const filtroEl = document.getElementById("pedidos-filter");
+                const estadoSel = filtroEl ? filtroEl.value : "pendiente";
+                let url = `/api/pedidos?limit=50`;
+                if(estadoSel){ url += `&estado=${encodeURIComponent(estadoSel)}`; }
+                if(q){ url += `&q=${encodeURIComponent(q)}`; }
+                const resp = await fetch(url);
+                const arr = await resp.json();
+                if(Array.isArray(arr)) renderPedidosList(arr);
+            } catch(e){}
+        }
+        function cargarPedidoSeleccionadoOverlay(){
+            const num = _pedidoSeleccionado || "";
+            if(!num){ alert("Seleccione un pedido"); return; }
+            document.getElementById("pedido-num-input").value = num;
+            cargarPedidoEnVenta();
+            cerrarPedidosOverlay();
+        }
+        
+        function formatearCantidad(input) {
+            const tr = input.closest("tr");
+            const esPesable = tr?.dataset?.pesable === "1";
+            const raw = String(input.value || "").trim();
+            const sanitized = raw.replace(/[^0-9.,]/g, "").replace(",", ".");
+            let val = parseFloat(sanitized);
+            if (isNaN(val)) {
+                val = esPesable ? 0.01 : 1.00;
+            }
+            if (esPesable) {
+                if (val < 0.01) val = 0.01;
+            } else {
+                if (val < 1.00) val = 1.00;
+            }
+            input.value = val.toFixed(2);
+            if (tr) calcularFila(tr);
+        }
+
+        function alertOnce(msg) {
+            const now = Date.now();
+            if (!window._lastAlertTs || (now - window._lastAlertTs) > 1200) {
+                alert(msg);
+                window._lastAlertTs = now;
+            }
+        }
+        function esFilaEnBlanco(tr) {
+            const codigoVal = String(tr.querySelector(".codigo")?.value || "").trim();
+            const descVal = String(tr.querySelector(".descripcion")?.textContent || "").trim();
+            const precioVal = String(tr.querySelector(".precio")?.textContent || "").trim();
+            const totalVal = String(tr.querySelector(".total-fila")?.textContent || "").trim();
+            return codigoVal === "" && descVal === "" && precioVal === "" && totalVal === "";
+        }
+
+        function borrarFila(btn) {
+            const tr = btn.closest("tr");
+            const esUltima = tr === tablaBody.lastElementChild;
+            const codigoVal = (tr.querySelector(".codigo")?.value || "").trim();
+            const descripcionVal = (tr.querySelector(".descripcion")?.textContent || "").trim();
+            const precioVal = (tr.querySelector(".precio")?.textContent || "").trim();
+            const totalVal = (tr.querySelector(".total-fila")?.textContent || "").trim();
+            const filaEnBlanco = codigoVal === "" && precioVal === "" && totalVal === "" && descripcionVal === "";
+            if (esUltima && filaEnBlanco) {
+                const qty = tr.querySelector(".cantidad");
+                tr.querySelector(".codigo").value = "";
+                tr.querySelector(".descripcion").textContent = "";
+                qty.type = "number";
+                qty.value = "1.00";
+                qty.min = "1";
+                qty.step = "0.01";
+                qty.placeholder = "Cantidad";
+                tr.querySelector(".precio").textContent = "";
+                tr.querySelector(".total-fila").textContent = "";
+                tr.querySelector(".isv").textContent = "";
+                tr.dataset.pesable = "0";
+                recalcularTotalesGlobales();
+                tr.querySelector(".codigo").focus();
+                return;
+            }
+            if (tablaBody.rows.length > 1) {
+                tr.remove();
+                renumerarFilas();
+                recalcularTotalesGlobales();
+                const last = tablaBody.lastElementChild;
+                if (last) {
+                    const lastCode = last.querySelector(".codigo");
+                    const lastCodeVal = (lastCode?.value || "").trim();
+                    if (!lastCodeVal) {
+                        lastCode.focus();
+                    } else {
+                        agregarFila();
+                        tablaBody.lastElementChild.querySelector(".codigo").focus();
+                    }
+                } else {
+                    agregarFila();
+                    tablaBody.lastElementChild.querySelector(".codigo").focus();
+                }
+            } else {
+                tr.querySelector(".codigo").value = "";
+                tr.querySelector(".descripcion").textContent = "";
+                const qty = tr.querySelector(".cantidad");
+                qty.type = "number";
+                qty.value = "1.00";
+                qty.min = "1";
+                qty.step = "0.01";
+                qty.placeholder = "Cantidad";
+                tr.querySelector(".precio").textContent = "";
+                tr.querySelector(".total-fila").textContent = "";
+                tr.querySelector(".isv").textContent = "";
+                tr.dataset.pesable = "0";
+                recalcularTotalesGlobales();
+                tr.querySelector(".codigo").focus();
+            }
+        }
+
+        function renumerarFilas() {
+            Array.from(tablaBody.rows).forEach((tr, index) => {
+                tr.cells[0].textContent = index + 1;
+            });
+        }
+
+        function aumentarCantidadFila(btn) {
+            const tr = btn.closest("tr");
+            const input = tr.querySelector(".cantidad");
+            const esPesable = tr.dataset.pesable === "1";
+            let val = parseFloat(String(input.value || "").replace(",", ".")) || 0;
+            if (esPesable) {
+                val = val + 0.10;
+                if (val < 0.01) val = 0.01;
+            } else {
+                val = (val || 1) + 1.00;
+                if (val < 1.00) val = 1.00;
+            }
+            input.value = val.toFixed(2);
+            calcularFila(tr);
+        }
+
+        function reducirCantidadFila(btn) {
+            const tr = btn.closest("tr");
+            const input = tr.querySelector(".cantidad");
+            const esPesable = tr.dataset.pesable === "1";
+            let val = parseFloat(String(input.value || "").replace(",", ".")) || (esPesable ? 0 : 1);
+            if (esPesable) {
+                val = Math.max(val - 0.10, 0.01);
+            } else {
+                val = Math.max(val - 1.00, 1.00);
+            }
+            input.value = val.toFixed(2);
+            calcularFila(tr);
+        }
+
+        function moverFila(btn, direction) {
+            const tr = btn.closest("tr");
+            if (direction === -1 && tr.previousElementSibling) {
+                tablaBody.insertBefore(tr, tr.previousElementSibling);
+            } else if (direction === 1 && tr.nextElementSibling) {
+                tablaBody.insertBefore(tr.nextElementSibling, tr);
+            }
+            renumerarFilas();
+        }
+
+        function parseLempiras(str) {
+            return parseFloat(String(str || "").replace("L","").replace(",","").trim()) || 0;
+        }
+        async function actualizarCaiPago() {
+            try {
+                const ex = document.getElementById("pago-exenta").checked;
+                const r = await fetch("/api/cai-info?tipo=" + (ex ? "E" : "G"));
+                const info = await r.json();
+                window.caiInfo = info || {};
+                const fdiv = document.getElementById("pago-factura");
+                const cdiv = document.getElementById("pago-cai");
+                if (info && info.numero_formato) {
+                    fdiv.textContent = "Factura: " + info.numero_formato;
+                } else {
+                    fdiv.textContent = "Factura: —";
+                }
+                if (info && info.cai) {
+                    cdiv.textContent = "CAI: " + info.cai;
+                } else {
+                    cdiv.textContent = "CAI: —";
+                }
+            } catch(e) {
+                document.getElementById("pago-factura").textContent = "Factura: —";
+                document.getElementById("pago-cai").textContent = "CAI: —";
+            }
+        }
+        async function actualizarCorrHeader() {
+            try {
+                const r = await fetch("/api/cai-info?tipo=G");
+                const info = await r.json();
+                const el = document.getElementById("header-corr");
+                if (info && info.numero_formato) {
+                    el.textContent = info.numero_formato;
+                } else {
+                    el.textContent = "—";
+                }
+            } catch(e) {
+                const el = document.getElementById("header-corr");
+                el.textContent = "—";
+            }
+        }
+        async function pagar() {
+            if (!aperturaAbierta) {
+                mostrarApertura();
+                return;
+            }
+            const totalStr = document.getElementById("header-total").textContent;
+            const totalNum = parseLempiras(totalStr);
+            if (totalNum <= 0) {
+                alert("No hay productos para pagar.");
+                return;
+            }
+            await actualizarCaiPago();
+            document.getElementById("pago-total-box").textContent = "Total a pagar: " + totalStr;
+            document.getElementById("pago-metodo").value = "efectivo";
+            document.getElementById("pago-ef").value = "";
+            document.getElementById("pago-tar").value = "";
+            document.getElementById("pago-tr").value = "";
+            actualizarPagoCampos();
+            setTimeout(()=>document.getElementById("pago-ef").focus(), 10);
+            actualizarImpuestosPago();
+            recalcularPago();
+            const ov = document.getElementById("pago-overlay");
+            ov.style.display = "flex";
+        }
+        function cerrarPago() {
+            const ov = document.getElementById("pago-overlay");
+            ov.style.display = "none";
+        }
+        function actualizarPagoCampos() {
+            const metodo = document.getElementById("pago-metodo").value;
+            const ef = document.getElementById("pago-ef");
+            const tar = document.getElementById("pago-tar");
+            const tr = document.getElementById("pago-tr");
+            ef.value = "0.00"; tar.value = "0.00"; tr.value = "0.00";
+            const totalNum = parseLempiras(document.getElementById("pago-total-box").textContent.replace("Total a pagar:",""));
+            if (metodo === "efectivo") {
+                ef.removeAttribute("readonly"); ef.removeAttribute("disabled"); ef.value = ""; ef.focus();
+                tar.setAttribute("readonly", "readonly"); tar.setAttribute("disabled", "disabled");
+                tr.setAttribute("readonly", "readonly"); tr.setAttribute("disabled", "disabled");
+            } else if (metodo === "tarjeta") {
+                ef.setAttribute("readonly", "readonly"); ef.setAttribute("disabled", "disabled");
+                tar.removeAttribute("readonly"); tar.removeAttribute("disabled"); tar.value = totalNum.toFixed(2);
+                tr.setAttribute("readonly", "readonly"); tr.setAttribute("disabled", "disabled");
+            } else if (metodo === "transferencia") {
+                ef.setAttribute("readonly", "readonly"); ef.setAttribute("disabled", "disabled");
+                tar.setAttribute("readonly", "readonly"); tar.setAttribute("disabled", "disabled");
+                tr.removeAttribute("readonly"); tr.removeAttribute("disabled"); tr.value = totalNum.toFixed(2);
+            } else {
+                ef.removeAttribute("readonly"); ef.removeAttribute("disabled"); ef.value = "";
+                tar.removeAttribute("readonly"); tar.removeAttribute("disabled"); tar.value = "";
+                tr.removeAttribute("readonly"); tr.removeAttribute("disabled"); tr.value = "";
+            }
+            recalcularPago();
+        }
+        function recalcularPago() {
+            const totalNum = parseLempiras(document.getElementById("pago-total-box").textContent.replace("Total a pagar:",""));
+            const ef = parseMoneda(document.getElementById("pago-ef").value);
+            const tar = parseMoneda(document.getElementById("pago-tar").value);
+            const tr = parseMoneda(document.getElementById("pago-tr").value);
+            const tp = ef + tar + tr;
+            document.getElementById("pago-total-pag").textContent = "Total Pagado: L " + tp.toFixed(2);
+            if (tp >= totalNum) {
+                const cambio = tp - totalNum;
+                document.getElementById("pago-cambio-text").textContent = "Cambio: L " + cambio.toFixed(2);
+            } else {
+                const falt = totalNum - tp;
+                document.getElementById("pago-cambio-text").textContent = "Faltan: L " + falt.toFixed(2);
+            }
+        }
+        function parseMoneda(s) {
+            let t = String(s || "").trim().replace(",", ".");
+            t = t.replace(/[^0-9.]/g, "");
+            if ((t.match(/\./g) || []).length > 1) {
+                const parts = t.split(".");
+                t = parts.slice(0, -1).join("") + "." + parts.slice(-1);
+            }
+            if (t === "" || t === ".") return 0.0;
+            const f = parseFloat(t);
+            return isNaN(f) ? 0.0 : f;
+        }
+        function destinoPagoInput() {
+            const metodo = document.getElementById("pago-metodo").value;
+            if (metodo === "tarjeta") return document.getElementById("pago-tar");
+            if (metodo === "transferencia") return document.getElementById("pago-tr");
+            return document.getElementById("pago-ef");
+        }
+        function pagoKeyPress(t) {
+            const d = destinoPagoInput();
+            if (t === "←") {
+                d.value = (d.value || "").slice(0, -1);
+            } else {
+                d.value = (d.value || "") + t;
+            }
+            recalcularPago();
+        }
+        function actualizarImpuestosPago() {
+            const exenta = document.getElementById("pago-exenta").checked;
+            const exEl = document.getElementById("pago-exento-line");
+            const g15El = document.getElementById("pago-g15-line");
+            const g18El = document.getElementById("pago-g18-line");
+            const i15El = document.getElementById("pago-i15-line");
+            const i18El = document.getElementById("pago-i18-line");
+            const frame = document.getElementById("pago-imp-frame");
+            if (exenta) {
+                const totalNum = parseLempiras(document.getElementById("pago-total-box").textContent.replace("Total a pagar:",""));
+                exEl.textContent = "Ventas Exentas:      L " + totalNum.toFixed(2);
+                g15El.textContent = "Gravado 15%:         L 0.00";
+                g18El.textContent = "Gravado 18%:         L 0.00";
+                i15El.textContent = "ISV 15%:             L 0.00";
+                i18El.textContent = "ISV 18%:             L 0.00";
+                frame.style.background = "#E8F8F5";
+                frame.style.border = "2px solid #1ABC9C";
+            } else {
+                exEl.textContent = "Ventas Exentas:      " + document.getElementById("exento").textContent;
+                g15El.textContent = "Gravado 15%:         " + document.getElementById("gravado15").textContent;
+                g18El.textContent = "Gravado 18%:         " + document.getElementById("gravado18").textContent;
+                i15El.textContent = "ISV 15%:             " + document.getElementById("isv15").textContent;
+                i18El.textContent = "ISV 18%:             " + document.getElementById("isv18").textContent;
+                frame.style.background = "#F8F9F9";
+                frame.style.border = "1px solid #D5D8DC";
+            }
+        }
+        document.getElementById("pago-exenta").addEventListener("change", () => { actualizarImpuestosPago(); actualizarCaiPago(); });
+        async function confirmarPago() {
+            const esExenta = document.getElementById("pago-exenta").checked;
+            const totalNum = parseLempiras(document.getElementById("pago-total-box").textContent.replace("Total a pagar:",""));
+            const ef = parseMoneda(document.getElementById("pago-ef").value);
+            const tar = parseMoneda(document.getElementById("pago-tar").value);
+            const tr = parseMoneda(document.getElementById("pago-tr").value);
+            const tp = ef + tar + tr;
+            if (tp < totalNum - 0.05) { // Tolerancia pequeña
+                alert("Total a pagar: L " + totalNum.toFixed(2) + "\nTotal recibido: L " + tp.toFixed(2));
+                const dest = destinoPagoInput();
+                dest.focus();
+                return;
+            }
+            
+            // Recopilar datos para envio
+            const items = [];
+            const rows = document.querySelectorAll("#tabla-venta tbody tr");
+            rows.forEach(row => {
+                const codigo = row.querySelector(".codigo").value;
+                if(!codigo) return;
+                const desc = row.querySelector(".descripcion").textContent;
+                const precio = parseFloat(row.querySelector(".precio").textContent) || 0;
+                const cantidad = parseFloat(row.querySelector(".cantidad").value) || 0;
+                if(cantidad <= 0) return;
+                
+                const isvText = row.querySelector(".isv").textContent;
+                let id_isv = 3; // Exento default
+                if(isvText === "15%") id_isv = 1;
+                if(isvText === "18%") id_isv = 2;
+                if (esExenta) id_isv = 3;
+                
+                items.push({
+                    codigo: codigo,
+                    descripcion: desc,
+                    precio: precio,
+                    cantidad: cantidad,
+                    id_isv: id_isv
+                });
+            });
+            
+            if(items.length === 0) {
+                alert("No hay items válidos para facturar");
+                return;
+            }
+
+            const rtnVal = (document.getElementById("rtn-input").value || "").trim();
+            const clienteNombre = (document.getElementById("cliente-input").value || "CONSUMIDOR FINAL").trim() || "CONSUMIDOR FINAL";
+            let clienteId = null;
+            if (window._clientesVenta) {
+                if (rtnVal && window._clientesVenta.byRtn[rtnVal] && window._clientesVenta.byRtn[rtnVal].id_cliente != null) {
+                    clienteId = window._clientesVenta.byRtn[rtnVal].id_cliente;
+                } else if (clienteNombre && window._clientesVenta.byNombre[clienteNombre] && window._clientesVenta.byNombre[clienteNombre].id_cliente != null) {
+                    clienteId = window._clientesVenta.byNombre[clienteNombre].id_cliente;
+                }
+            }
+            const pagoData = {
+                efectivo: ef,
+                tarjeta: tar,
+                transferencia: tr
+            };
+
+            try {
+                const resp = await fetch("/api/registrar-venta", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        cliente_id: clienteId,
+                        cliente_rtn: rtnVal,
+                        cliente_nombre: clienteNombre,
+                        items: items,
+                        pago: pagoData,
+                        pedido_numero: (document.getElementById("pedido-num-input").value || "").trim() || null
+                    })
+                });
+                
+                if(!resp.ok) {
+                    const err = await resp.json();
+                    alert("Error al guardar venta: " + (err.error || "Desconocido"));
+                    return;
+                }
+                
+                const data = await resp.json();
+                
+                // Si venía de un pedido, eliminarlo de pendientes
+                const pedidoNum = (document.getElementById("pedido-num-input").value || "").trim();
+                if(pedidoNum) {
+                    if ((window._pedidoEstado||"").toLowerCase() === "desactivado" || (window._pedidoEstado||"").toLowerCase() === "generado" || (window._pedidoEstado||"").toLowerCase() === "cobrado") {
+                        alert("No se puede facturar: pedido desactivado o ya cobrado");
+                        return;
+                    }
+                    try {
+                        await fetch(`/api/pedidos/${encodeURIComponent(pedidoNum)}`, { method: "DELETE" });
+                        refrescarPedidosPendientes();
+                    } catch(e) { console.error("Error eliminando pedido", e); }
+                }
+
+                cerrarPago();
+                limpiarTodo();
+                actualizarCorrHeader();
+                
+                // Actualizar boton reimpresion
+                const btnRe = document.getElementById("btn-reimprimir");
+                if(btnRe) {
+                    btnRe.style.display = "inline-block";
+                    btnRe.setAttribute("onclick", `window.open('/factura/imprimir/${data.factura_id}', '_blank', 'width=800,height=1000')`);
+                }
+
+                // Abrir factura
+                const win = window.open(`/factura/imprimir/${data.factura_id}`, "_blank", "width=800,height=1000");
+                if(!win) {
+                    alert("Venta guardada. Factura #" + data.factura_id + ".\n\nEl navegador bloqueó la ventana emergente. Use el botón 'Reimprimir Última'.");
+                }
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error de conexión al guardar venta");
+            }
+        }
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "F3") {
+                e.preventDefault();
+                let tr = null;
+                const el = document.activeElement;
+                if (el && el.closest) {
+                    tr = el.closest("tr");
+                }
+                if (!tr || tr.parentElement !== tablaBody) {
+                    tr = tablaBody.lastElementChild;
+                }
+                const qty = tr && tr.querySelector(".cantidad");
+                if (qty) {
+                    qty.focus();
+                    try {
+                        qty.select();
+                    } catch (err) {
+                        const val = String(qty.value || "");
+                        try { qty.setSelectionRange(0, val.length); } catch (e2) {}
+                    }
+                }
+                return;
+            }
+            if (e.key === "F4") {
+                e.preventDefault();
+                let tr = null;
+                const el = document.activeElement;
+                if (el && el.closest) {
+                    tr = el.closest("tr");
+                }
+                if (!tr || tr.parentElement !== tablaBody) {
+                    tr = tablaBody.lastElementChild;
+                }
+                const delBtn = tr && tr.querySelector(".row-actions .delete");
+                if (delBtn) {
+                    borrarFila(delBtn);
+                }
+                return;
+            }
+            const ov = document.getElementById("pago-overlay");
+            if (ov.style.display === "flex") {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    cerrarPago();
+                }
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    confirmarPago();
+                }
+            }
+        });
+
+        function limpiarTabla() {
+            if(confirm("¿Eliminar todos los productos de la lista?")) {
+                tablaBody.innerHTML = "";
+                agregarFila();
+                recalcularTotalesGlobales();
+            }
+        }
+
+        function limpiarTodo() {
+            tablaBody.innerHTML = "";
+            agregarFila();
+            recalcularTotalesGlobales();
+            document.getElementById("rtn-input").value = "";
+            document.getElementById("cliente-input").value = "";
+            const pInput = document.getElementById("pedido-num-input");
+            if(pInput) pInput.value = "";
+            actualizarCorrHeader();
+        }
+        window.addEventListener("load", actualizarCorrHeader);
+        window.addEventListener("load", initVenta);
+        async function cargarClientesVentas() {
+            try {
+                const resp = await fetch("/api/clientes");
+                const data = await resp.json();
+                const dlRtn = document.getElementById("rtn-list");
+                const dlCli = document.getElementById("cliente-list");
+                dlRtn.innerHTML = "";
+                dlCli.innerHTML = "";
+                window._clientesVenta = { byRtn: {}, byNombre: {} };
+                data.forEach(c => {
+                    const optR = document.createElement("option");
+                    optR.value = c.rtn || "";
+                    optR.label = c.nombre || "";
+                    dlRtn.appendChild(optR);
+                    const optC = document.createElement("option");
+                    optC.value = c.nombre || "";
+                    optC.label = c.rtn || "";
+                    dlCli.appendChild(optC);
+                    if (c.rtn) window._clientesVenta.byRtn[c.rtn] = c;
+                    if (c.nombre) window._clientesVenta.byNombre[c.nombre] = c;
+                });
+                const rtnInput = document.getElementById("rtn-input");
+                const cliInput = document.getElementById("cliente-input");
+                rtnInput.addEventListener("change", () => {
+                    const v = rtnInput.value.trim();
+                    const c = window._clientesVenta.byRtn[v];
+                    if (c && c.nombre) cliInput.value = c.nombre;
+                });
+                cliInput.addEventListener("change", () => {
+                    const v = cliInput.value.trim();
+                    const c = window._clientesVenta.byNombre[v];
+                    if (c && c.rtn) rtnInput.value = c.rtn;
+                });
+            } catch(e) {}
+        }
+
+        let aperturaAbierta = false;
+        async function checkAperturaEstado() {
+            try {
+                const r = await fetch("/api/apertura/estado");
+                const j = await r.json();
+                aperturaAbierta = !!(j && j.abierta);
+                if (!aperturaAbierta) mostrarApertura();
+            } catch(e) {
+                aperturaAbierta = false;
+                mostrarApertura();
+            }
+        }
+        function mostrarApertura() {
+            const ov = document.getElementById("apertura-overlay");
+            ov.style.display = "flex";
+            const inp = document.getElementById("apertura-monto");
+            inp.value = "";
+            const uinp = document.getElementById("apertura-usuario");
+            if (uinp) {
+                uinp.value = LOGGED_USER || "";
+                uinp.readOnly = true;
+            }
+            setTimeout(()=>inp.focus(), 10);
+        }
+        function cerrarApertura() {
+            const ov = document.getElementById("apertura-overlay");
+            ov.style.display = "none";
+        }
+        async function confirmarApertura() {
+            const v = parseMoneda(document.getElementById("apertura-monto").value);
+            if (v <= 0) {
+                alert("Ingrese el monto de apertura");
+                document.getElementById("apertura-monto").focus();
+                return;
+            }
+            try {
+                const resp = await fetch("/api/apertura/abrir", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ monto: v })
+                });
+                const data = await resp.json();
+                if (!resp.ok || (data && data.ok === false)) {
+                    alert((data && data.error) || "No se pudo abrir caja");
+                    return;
+                }
+                aperturaAbierta = true;
+                cerrarApertura();
+            } catch(e) {
+                alert("Error de conexión");
+            }
+        }
+
+        // Init
+        init();
+    </script>
+</body>
+</html>
